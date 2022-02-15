@@ -1,0 +1,15 @@
+package dsl
+
+/**
+ * An dsl.Expression represents a computation that eventually evaluates to a value.
+ * Expressions can be nested.
+ */
+abstract class Expression
+case class Union(exp1: Expression, exp2: Expression) extends Expression
+case class Difference(exp1: Expression, exp2: Expression) extends Expression
+case class Intersection(exp1: Expression, exp2: Expression) extends Expression
+case class SymmetricDifference(exp1: Expression, exp2: Expression) extends Expression
+case class CartesianProduct(exp1: Expression, exp2: Expression) extends Expression
+case class CheckIfContains(exp1: Expression, exp2: Expression) extends Expression
+case class Value(value: Any) extends Expression
+case class Variable(name: String) extends Expression // used for macro expansion as well

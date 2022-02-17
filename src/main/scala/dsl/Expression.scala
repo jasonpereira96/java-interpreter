@@ -13,3 +13,5 @@ case class CartesianProduct(exp1: Expression, exp2: Expression) extends Expressi
 case class CheckIfContains(exp1: Expression, exp2: Expression) extends Expression
 case class Value(value: Any) extends Expression
 case class Variable(name: String) extends Expression // used for macro expansion as well
+case class ScopeResolvedVariable(scopeName: String, name: String) extends Expression
+case class NewObject(className: String, args: (String, Any)*) extends Expression

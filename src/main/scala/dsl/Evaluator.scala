@@ -1,6 +1,8 @@
 package dsl
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
+import dsl.Constants._
+
 
 class Evaluator {
   /**
@@ -9,28 +11,30 @@ class Evaluator {
    * A stack of states is required because each scope has it own state which consists of the local
    * variables of that scope.
    */
-  private val stack = mutable.Stack[Map[String, Value]]()
-  this.stack.push(Map.empty[String, Value])
+  private val SCOPE_NAME = "__SCOPE_NAME__"
+  private val stack = mutable.Stack[ScopeRecord]()
+  this.stack.push(new ScopeRecord())
 
   /**
    * @return Returns the state of the current scope of execution
    */
-  private def getState() = this.stack.top
+  private def getState() = this.stack.top.getState()
 
   /**
-   * mutable.Sets a new state on the stack.
+   * Modifies the topmost state on the stack.
    * @param newState Returns the new state after modification
    */
-  private def setState(newState: Map[String, Value]): Unit = {
-    this.stack.pop()
-    this.stack.push(newState)
+  private def setState(newState: mutable.Map[String, Value]): Unit = {
+    val oldScopeRecord = this.stack.pop()
+    this.stack.push(new ScopeRecord(oldScopeRecord.getName(), newState))
   }
 
   /**
    * Pushes a new Map on the stack. Called when entering a new scope.
+   * @oaram name The name of the scope to be created
    */
-  private def pushStackFrame(): Unit = {
-    this.stack.push(Map.empty[String, Value])
+  private def pushStackFrame(name: String = UNNAMED): Unit = {
+    this.stack.push(new ScopeRecord(name))
   }
   /**
    * Pops a Map from the stack. Called when exiting a scope.
@@ -50,12 +54,35 @@ class Evaluator {
    */
   private def lookup(name: String): Value = {
     for(index <- this.stack.indices by 1) {
-      val state = stack(index)
+      val state = stack(index).getState()
       if (state.contains(name)) {
         return state(name)
       }
     }
     throw new Exception(s"$name is undefined")
+  }
+  private def lookupScope(scopeName: String): ScopeRecord = {
+    for(index <- this.stack.indices by 1) {
+      val scopeRecord = stack(index)
+      val currentScopeName = scopeRecord.getName()
+      if (currentScopeName == scopeName) {
+        return stack(index)
+      }
+    }
+    throw new Exception(s"Scope $scopeName is not defined")
+  }
+  // we can do away with this
+  private def lookupWithScopeName(scopeName: String, varName: String): Value = {
+    for(index <- this.stack.indices by 1) {
+      val state = stack(index).getState()
+      val currentScopeName = stack(index).getName()
+      if (currentScopeName == scopeName) {
+        if (state.contains(varName)) {
+          return state(varName)
+        }
+      }
+    }
+    throw new Exception(s"$varName is undefined")
   }
 
   /**
@@ -63,13 +90,13 @@ class Evaluator {
    * @param program A list of commands to run
    * @return Returns a Map that represents the final state of the program after all statements have been executed.
    */
-  def runProgram(program: Program): Map[String, Value] = {
+  def runProgram(program: Program): immutable.Map[String, Value] = {
     this.stack.clear()
-    this.stack.push(Map.empty[String, Value])
+    this.stack.push(new ScopeRecord())
     for (command: Command <- program.commands) {
       execute(command)
     }
-    stack.top
+    stack.top.getState().toMap
   }
 
   /**
@@ -77,9 +104,9 @@ class Evaluator {
    * @param commands The commands to run
    * @return Returns a Map that represents the final state of the program after all statements have been executed.
    */
-  def run(commands: Command*): Map[String, Value] = {
+  def run(commands: Command*): immutable.Map[String, Value] = {
     this.runProgram(new Program(commands.toList))
-    stack.top
+    stack.top.getState().toMap
   }
 
   /**
@@ -109,7 +136,23 @@ class Evaluator {
         } catch {
           case _ :Throwable => throw new Exception(s"dsl.Variable $name not found")
         }
+      case ScopeResolvedVariable(scopeName: String, varName) =>
+        try {
 
+          if (this.stack.filter(_.getName() == scopeName).length == 0) {
+            throw new Exception(s"dsl.Scope name $scopeName not found")
+          }
+          val v = lookupWithScopeName(scopeName, varName).value
+
+          v match {
+            case exp: Expression =>
+              evaluate(exp)
+            case _ =>
+              Value(v)
+          }
+        } catch {
+          case _ :Throwable => throw new Exception(s"dsl.Variable $varName not found")
+        }
       case Union(exp1, exp2) =>
         val v1 = evaluate(exp1)
         val v2 = evaluate(exp2)
@@ -156,6 +199,25 @@ class Evaluator {
         val set1: mutable.Set[Value] = expressions.head.value.asInstanceOf[mutable.Set[Value]]
         val v: Value = expressions(1)
         Value(set1.contains(v))
+      case NewObject(className, args @_*) => {
+        try {
+          val classDefValue = lookup(className)
+          assert(classDefValue.value.isInstanceOf[ClassDefinition])
+          val classDef = classDefValue.value.asInstanceOf[ClassDefinition]
+
+          pushStackFrame(s"Constructor call of ${classDef.name}")
+          // this is dangerous and may have deadly side effects :'(
+          for (c <- classDef.getConstructor) {
+            execute(c)
+          }
+          popStackFrame()
+
+        } catch {
+          case _ :Throwable => throw new Exception(s"class $className is not defined in this scope")
+        }
+        val o = new dsl.Object(className)
+        Value(o)
+      }
 
       case _ =>
         Value(99)
@@ -173,10 +235,23 @@ class Evaluator {
         val state = this.getState()
         val newState = state + (name -> Value(mutable.Set.empty[Value]))
         this.setState(newState)
-      case Assign(ident, exp) =>
-        val name = ident
-        val newState = this.getState() + (name -> evaluate(exp))
-        this.setState(newState)
+      case Assign(variable: Any, exp) =>
+        variable match {
+          case Variable(name) => {
+            val newState = this.getState() + (name -> evaluate(exp))
+            this.setState(newState)
+          }
+          case ScopeResolvedVariable(scopeName: String, varName: String) => {
+            val sr = lookupScope(scopeName)
+            val state = sr.getState()
+            state(varName) = evaluate(exp)
+          }
+          // TODO
+          // case This => {}
+          case _ => {
+            throw new Error("Assign() parameter type invalid")
+          }
+        }
       case Insert(ident, expressionsSeq @ _*) =>
         val name = ident
         val expressions = expressionsSeq.toList
@@ -200,7 +275,15 @@ class Evaluator {
         this.setState(newState)
       case Scope(name, commands@_*) =>
         val commandsList = commands.toList
-        this.pushStackFrame() // push a stack from onto the stack since we're entering a new scope
+        this.pushStackFrame(UNNAMED) // push a stack from onto the stack since we're entering a new scope
+        for (command: Command <- commandsList) {
+          execute(command)
+        }
+        this.popStackFrame() // pop the stack frame from the stack
+
+      case NamedScope(name, commands@_*) =>
+        val commandsList = commands.toList
+        this.pushStackFrame(name) // push a stack from onto the stack since we're entering a new scope
         for (command: Command <- commandsList) {
           execute(command)
         }
@@ -216,6 +299,42 @@ class Evaluator {
           case x =>
             println(x)
         }
+      case DefineClass(name, options @ _*) => {
+        // check for multiple inheritance
+        if (options.filter(option => option.isInstanceOf[Extends]).length > 1) {
+          throw new Exception(s"Two or more extends clauses found. Multiple inheritance is not allowed.")
+        }
+
+        // need to check for class already defined
+        // TODO
+
+        val classDefinition = new ClassDefinition(name, options: _*)
+
+        // check for single inheritance
+        for (o: ClassDefinitionOption <- options) {
+          o match {
+            case Extends(parentClassName) => {
+              try {
+                val classDefinitionValue = lookup(parentClassName)
+                assert(classDefinitionValue.value.isInstanceOf[ClassDefinition])
+                // set the name of the parent class given in the extends clause
+                classDefinition.setParentClass(classDefinitionValue.value.asInstanceOf[ClassDefinition].getName)
+              } catch {
+                case _ :Throwable => throw new
+                    Exception(s"Parent class of the extends clause $parentClassName not defined")
+              }
+            }
+            case _ => {}
+          }
+        }
+        val newState = this.getState() + (name -> Value(classDefinition))
+        this.setState(newState)
+      }
+      case PrintStack() => {
+        for (sr <- this.stack) {
+          println(sr)
+        }
+      }
     }
   }
 

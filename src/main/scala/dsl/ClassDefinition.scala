@@ -1,19 +1,22 @@
 package dsl
 
+import dsl.AccessModifiers.{AccessModifiers, PUBLIC}
+
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.ListBuffer
 
 abstract class ClassDefinitionOption
 case class Constructor(commands: Command*) extends ClassDefinitionOption
-case class Field(fieldName: String) extends ClassDefinitionOption
+//case class Field(fieldName: String) extends ClassDefinitionOption
+case class Field(fieldName: String, accessModifier: AccessModifiers = PUBLIC) extends ClassDefinitionOption
 case class Method(name: String, commands: Command*) extends ClassDefinitionOption
 case class Extends(name: String) extends ClassDefinitionOption
 
 class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
-  private val fields = mutable.Map.empty[String, Any] // why is this a map? maybe we can store the type of field
+  private val fields = mutable.Map.empty[String, (AccessModifiers, Value)] // why is this a map? maybe we can store the type of field
   private val methods = mutable.Map.empty[String, List[Command]]
   private val constructor = mutable.ListBuffer.empty[Command]
-  val parentClass = mutable.Set.empty[String]
+  private val parentClass = mutable.Set.empty[String]
 
 
   for (option <- options) {
@@ -24,9 +27,11 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
       case Method(name: String, commands @ _*) => {
         this.methods.addOne(name, commands.toList)
       }
-      case Field(name: String) => {
-        this.fields.addOne(name, null)
+      case Field(name: String, accessModifier: AccessModifiers) => {
+        this.fields.addOne(name, (accessModifier, null))
       }
+
+
       // handling this outside for now
       // case Extends(name: String) => {
         //this.parentClass.addOne(name)
@@ -54,4 +59,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
     return this.parentClass.toList.head
   }
 
+  def getFieldInfo(): List[(String, AccessModifiers, Value)] = {
+    return this.fields.toList.map(x => (x._1, x._2._1, x._2._2))
+  }
 }

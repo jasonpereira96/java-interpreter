@@ -13,6 +13,7 @@ class Evaluator {
    */
   private val SCOPE_NAME = "__SCOPE_NAME__"
   private val stack = mutable.Stack[ScopeRecord]()
+  private val classTable = mutable.Map.empty[String, ClassDefinition]
   this.stack.push(new ScopeRecord())
 
   /**
@@ -33,9 +34,14 @@ class Evaluator {
    * Pushes a new Map on the stack. Called when entering a new scope.
    * @oaram name The name of the scope to be created
    */
-  private def pushStackFrame(name: String = UNNAMED): Unit = {
-    this.stack.push(new ScopeRecord(name))
+  private def pushStackFrame(name: String = UNNAMED, thisVal: dsl.Object = null): Unit = {
+    if (thisVal == null) {
+      this.stack.push(new ScopeRecord(name))
+    } else {
+      this.stack.push(new ScopeRecord(name, thisVal=thisVal))
+    }
   }
+
   /**
    * Pops a Map from the stack. Called when exiting a scope.
    */
@@ -60,6 +66,15 @@ class Evaluator {
       }
     }
     throw new Exception(s"$name is undefined")
+  }
+  private def lookupSafe(name: String): Value = {
+    for(index <- this.stack.indices by 1) {
+      val state = stack(index).getState()
+      if (state.contains(name)) {
+        return state(name)
+      }
+    }
+    null
   }
   private def lookupScope(scopeName: String): ScopeRecord = {
     for(index <- this.stack.indices by 1) {
@@ -123,6 +138,12 @@ class Evaluator {
   private def evaluate(exp: Expression): Value = {
     exp match {
       case Value(v) => Value(v)
+      case This(fieldName) => {
+        val sr = this.stack.head
+        assert(sr.hasThis)
+        val currentObject = sr.getThis
+        currentObject.getField(fieldName)
+      }
       case Variable(name) =>
         try {
           val v = lookup(name).value
@@ -199,11 +220,13 @@ class Evaluator {
         val set1: mutable.Set[Value] = expressions.head.value.asInstanceOf[mutable.Set[Value]]
         val v: Value = expressions(1)
         Value(set1.contains(v))
+
       case NewObject(className, args @_*) => {
         try {
-          val classDefValue = lookup(className)
-          assert(classDefValue.value.isInstanceOf[ClassDefinition])
-          val classDef = classDefValue.value.asInstanceOf[ClassDefinition]
+          val classDef = this.getClassDef(className)
+          // at this we know that the class exists because getClassDef handles error checking
+
+          val o = createObject(className)
 
           pushStackFrame(s"Constructor call of ${classDef.name}")
           // this is dangerous and may have deadly side effects :'(
@@ -211,12 +234,11 @@ class Evaluator {
             execute(c)
           }
           popStackFrame()
+          Value(o)
 
         } catch {
           case _ :Throwable => throw new Exception(s"class $className is not defined in this scope")
         }
-        val o = new dsl.Object(className)
-        Value(o)
       }
 
       case _ =>
@@ -247,7 +269,11 @@ class Evaluator {
             state(varName) = evaluate(exp)
           }
           // TODO
-          // case This => {}
+          case This(fieldName: String) => {
+            val sr = this.stack.head
+            val currentObject = sr.thisVal
+            currentObject.setField(fieldName, evaluate(exp))
+          }
           case _ => {
             throw new Error("Assign() parameter type invalid")
           }
@@ -314,22 +340,21 @@ class Evaluator {
         for (o: ClassDefinitionOption <- options) {
           o match {
             case Extends(parentClassName) => {
-              try {
-                val classDefinitionValue = lookup(parentClassName)
-                assert(classDefinitionValue.value.isInstanceOf[ClassDefinition])
+                // check whether the parent class actually exists
+                if (!this.classTable.contains(parentClassName)) {
+                  throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
+                }
                 // set the name of the parent class given in the extends clause
-                classDefinition.setParentClass(classDefinitionValue.value.asInstanceOf[ClassDefinition].getName)
-              } catch {
-                case _ :Throwable => throw new
-                    Exception(s"Parent class of the extends clause $parentClassName not defined")
-              }
+                classDefinition.setParentClass(parentClassName)
             }
             case _ => {}
           }
         }
-        val newState = this.getState() + (name -> Value(classDefinition))
-        this.setState(newState)
+//        val newState = this.getState() + (name -> Value(classDefinition))
+//        this.setState(newState)
+        this.classTable(name) = classDefinition
       }
+
       case PrintStack() => {
         for (sr <- this.stack) {
           println(sr)
@@ -360,5 +385,31 @@ class Evaluator {
     assert(this.stack.size == 1)
     val currentValue = lookup(name)
     currentValue == value
+  }
+
+  private def _getClassDef(className: String): ClassDefinition = {
+    val classDefValue = lookup(className)
+    assert(classDefValue.value.isInstanceOf[ClassDefinition])
+    val classDef = classDefValue.value.asInstanceOf[ClassDefinition]
+    classDef
+  }
+
+  private def getClassDef(className: String): ClassDefinition = {
+    assert(this.classTable.contains(className))
+    this.classTable(className)
+  }
+
+  private def createObject(className: String): dsl.Object = {
+    assert(this.classTable.contains(className))
+    val classDef = getClassDef(className)
+    val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
+
+    if (parentClassName != null && classTable.contains(parentClassName)) {
+      val parentClassDef = getClassDef(parentClassName)
+      return new Object(className,
+        classDef.getFieldInfo().toSeq ++ parentClassDef.getFieldInfo().toSeq :_*)
+    } else {
+      return new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
+    }
   }
 }

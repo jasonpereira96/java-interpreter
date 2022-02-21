@@ -55,7 +55,7 @@ object Main {
 
       DefineClass("Point", Constructor(
         Display("creating a point", "x"),
-      ), Field("x"), Field("y")),
+      ), Field("x", AccessModifiers.PUBLIC), Field("y")),
       Assign(Variable("p1"), NewObject("Point")),
 
       DefineClass("3DPoint", Constructor(

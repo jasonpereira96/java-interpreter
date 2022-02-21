@@ -142,7 +142,38 @@ class Evaluator {
         val sr = this.stack.head
         assert(sr.hasThis)
         val currentObject = sr.getThis
-        currentObject.getField(fieldName)
+        val className = currentObject.getClassName
+
+        /*
+        classNameOfFieldOption match {
+          case Some(classNameOfField) => {
+            if (classNameOfField == currentObject.getClassName) {
+              // its one of the fields on the class itself so any access level will do
+              return currentObject.getField(fieldName)
+            } else {
+              // its one of the fields of the parent class
+              val acm = getClassDef(className).getFieldAccessModifier(fieldName)
+
+              acm match {
+                case AccessModifiers.PRIVATE => {
+                  throw new Exception(s"Field $fieldName has private access")
+                }
+                case _ => {
+                  currentObject.getField(fieldName)
+                }
+              }
+            }
+          }
+          case None => {
+            throw new Exception(s"field $fieldName not found in class $className")
+          }
+        }*/
+
+        if (isFieldAccessible(currentObject, fieldName)) {
+          Value(sr.getThis)
+        }
+        throw new Exception(s"Field $fieldName is not accessible")
+
       }
       case Variable(name) =>
         try {
@@ -228,7 +259,7 @@ class Evaluator {
 
           val o = createObject(className)
 
-          pushStackFrame(s"Constructor call of ${classDef.name}")
+          pushStackFrame(s"Constructor call of ${classDef.name}", thisVal = o)
           // this is dangerous and may have deadly side effects :'(
           for (c <- classDef.getConstructor) {
             execute(c)
@@ -272,7 +303,11 @@ class Evaluator {
           case This(fieldName: String) => {
             val sr = this.stack.head
             val currentObject = sr.thisVal
-            currentObject.setField(fieldName, evaluate(exp))
+            if (isFieldAccessible(currentObject, fieldName)) {
+              currentObject.setField(fieldName, evaluate(exp))
+            } else {
+              throw new Exception(s"Invalid permissions for field $fieldName")
+            }
           }
           case _ => {
             throw new Error("Assign() parameter type invalid")
@@ -354,12 +389,42 @@ class Evaluator {
 //        this.setState(newState)
         this.classTable(name) = classDefinition
       }
+      case InvokeMethod(returnee: Variable, objectName: String, methodName: String, params @_*) => {
+        val objectValue = lookup(objectName)
+        assert(objectValue.value.isInstanceOf[dsl.Object])
+        val object_ = objectValue.value.asInstanceOf[dsl.Object]
 
+        val className = object_.getClassName
+        val mdo = lookupMethod(className, methodName)
+
+        if (mdo.isDefined) {
+          val md = mdo.get
+
+          this.pushStackFrame(thisVal = object_)
+          for (c <- md.commands) {
+            this.execute(c)
+          }
+          this.popStackFrame()
+        } else {
+          throw new Exception(s"Method $methodName not found on object of class $className")
+        }
+      }
       case PrintStack() => {
         for (sr <- this.stack) {
           println(sr)
         }
       }
+    }
+  }
+  private def lookupMethod(className: String, methodName: String): Option[MethodDefinition] = {
+    val cd = getClassDef(className)
+
+    if (cd.hasMethod(methodName)) {
+      return Some(cd.getMethodDefinition(methodName)) // if the method is found on the current class
+    } else if (cd.hasParentClass()) {
+      return lookupMethod(cd.getParentClassName(), methodName) // check the parent classes
+    } else {
+      return None
     }
   }
 
@@ -399,7 +464,15 @@ class Evaluator {
     this.classTable(className)
   }
 
+  private def getClassDefOption(className: String): Option[ClassDefinition] = {
+    if (this.classTable.contains(className)) {
+      return Some(classTable(className))
+    }
+    return None
+  }
+
   private def createObject(className: String): dsl.Object = {
+    // TODO we'll have to call the constructor here of the super class to initialize the object WTF
     assert(this.classTable.contains(className))
     val classDef = getClassDef(className)
     val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
@@ -411,5 +484,60 @@ class Evaluator {
     } else {
       return new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
     }
+  }
+
+  private def getClassNameOfField(fieldName: String, className: String): Option[String] = {
+    // TODO Implement this
+    var cdo: Option[ClassDefinition] = getClassDefOption(className)
+    while (true) { // look up the inheritance chain searching for the field
+      cdo match {
+        case Some(cd) => {
+          if (cd.hasField(fieldName)) {
+            return Some(cd.getName)
+          }
+          cdo = getClassDefOption(cd.getParentClassName())
+        }
+        case None => { // reached the end of the inheritance chain
+          return None
+        }
+      }
+    }
+    return None
+  }
+
+  private def isFieldAccessible(currentObject: dsl.Object, fieldName: String): Boolean = {
+    val cd = getClassDef(currentObject.getClassName)
+    val objectClassName = cd.getName
+
+    if (hasField(cd, fieldName)) {
+      val classNameOption = getClassNameOfField(fieldName, currentObject.getClassName)
+      classNameOption match {
+        case Some(fieldClassName) => {
+          val fieldClassDef = getClassDef(fieldClassName)
+          if (fieldClassDef.getFieldAccessModifier(fieldName) == AccessModifiers.PUBLIC) {
+            return true
+          }
+          if (fieldClassName == objectClassName) { // its on the class itself so good to go
+            return true
+          } else {
+            return fieldClassDef.getFieldAccessModifier(fieldName) == AccessModifiers.PROTECTED
+          }
+        }
+        case None => {
+          throw new Exception("field is not present or inherited on this class")
+        }
+      }
+    }
+    throw new Exception()
+  }
+
+//  private def isParentField(cd: ClassDefinition, fieldName: String): Boolean = {
+//    if (cd.hasField(fieldName)) {
+//      return false
+//    }
+//  }
+
+  private def hasField(cd: ClassDefinition, fieldName: String): Boolean = {
+    return cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
   }
 }

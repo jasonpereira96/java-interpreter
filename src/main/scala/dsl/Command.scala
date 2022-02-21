@@ -1,7 +1,7 @@
 package dsl
 
 /**
- * A command represents an operating that you can perform in my language.
+ * A command represents an operation that you can perform in my language.
  */
 abstract class Command
 case class Assign(variable: Any, exp: Expression) extends Command
@@ -14,5 +14,5 @@ case class DefineMacro(name: String, expression: Expression) extends Command
 case class Display(message: String, identifier: String) extends Command
 //case class NewObject(referenceName: String, className: String, arguments: (String, Any)*) extends Command
 case class DefineClass(className: String, options: ClassDefinitionOption*) extends Command
-case class InvokeMethod(returnee: Variable, objectName: String, params: Expression*) extends Command
+case class InvokeMethod(returnee: Variable, objectName: String, methodName: String, params: (String, Expression)*) extends Command
 case class PrintStack() extends Command

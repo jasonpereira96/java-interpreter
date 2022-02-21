@@ -14,7 +14,7 @@ case class Extends(name: String) extends ClassDefinitionOption
 
 class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
   private val fields = mutable.Map.empty[String, (AccessModifiers, Value)] // why is this a map? maybe we can store the type of field
-  private val methods = mutable.Map.empty[String, List[Command]]
+  private val methods = mutable.Map.empty[String, MethodDefinition]
   private val constructor = mutable.ListBuffer.empty[Command]
   private val parentClass = mutable.Set.empty[String]
 
@@ -25,7 +25,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
         this.constructor.addAll(commands.toList)
       }
       case Method(name: String, commands @ _*) => {
-        this.methods.addOne(name, commands.toList)
+        this.methods.addOne(name, new MethodDefinition(name, commands.toList))
       }
       case Field(name: String, accessModifier: AccessModifiers) => {
         this.fields.addOne(name, (accessModifier, null))
@@ -51,12 +51,30 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
   def hasParentClass(): Boolean = {
     this.parentClass.size == 1
   }
+  def hasMethod(methodName: String): Boolean = this.methods.contains(methodName)
+
+  def hasField(fieldName: String): Boolean = this.fields.contains(fieldName)
+
+  def getMethodDefinition(methodName: String): MethodDefinition = {
+    if (hasMethod(methodName)) {
+      return this.methods(methodName)
+    }
+    throw new Exception(s"Method $methodName not found in class $name")
+  }
 
   def getParentClassName(): String = {
     if (this.parentClass.isEmpty) {
       return null
     }
     return this.parentClass.toList.head
+  }
+
+  def getFieldAccessModifier(fieldName: String): AccessModifiers = {
+    if (this.fields.contains(fieldName)) { // checking only on this class, not parent classes
+      return this.fields(fieldName)._1
+    } else {
+      throw new Exception()
+    }
   }
 
   def getFieldInfo(): List[(String, AccessModifiers, Value)] = {

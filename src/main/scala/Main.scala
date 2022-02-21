@@ -60,6 +60,7 @@ object Main {
 
       DefineClass("3DPoint", Constructor(
         Display("creating a 3d point", "x"),
+        Assign(This("z"), Value(200))
       ),
         Field("z"), Extends("Point")
       ),

@@ -13,7 +13,7 @@ case class Method(name: String, commands: Command*) extends ClassDefinitionOptio
 case class Extends(name: String) extends ClassDefinitionOption
 
 class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
-  private val fields = mutable.Map.empty[String, (AccessModifiers, Value)] // why is this a map? maybe we can store the type of field
+  private val fields = mutable.Map.empty[String, Field_] // why is this a map? maybe we can store the type of field
   private val methods = mutable.Map.empty[String, MethodDefinition]
   private val constructor = mutable.ListBuffer.empty[Command]
   private val parentClass = mutable.Set.empty[String]
@@ -28,7 +28,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
         this.methods.addOne(name, new MethodDefinition(name, commands.toList))
       }
       case Field(name: String, accessModifier: AccessModifiers) => {
-        this.fields.addOne(name, (accessModifier, null))
+        this.fields.addOne(name, new Field_(name, null, accessModifier))
       }
 
 
@@ -71,13 +71,13 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
 
   def getFieldAccessModifier(fieldName: String): AccessModifiers = {
     if (this.fields.contains(fieldName)) { // checking only on this class, not parent classes
-      return this.fields(fieldName)._1
+      return this.fields(fieldName).getAccessModifier()
     } else {
       throw new Exception()
     }
   }
 
-  def getFieldInfo(): List[(String, AccessModifiers, Value)] = {
-    return this.fields.toList.map(x => (x._1, x._2._1, x._2._2))
+  def getFieldInfo(): List[Field_] = {
+    return this.fields.toList.map[Field_](x => x._2)
   }
 }

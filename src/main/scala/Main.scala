@@ -1,6 +1,8 @@
 // import the dsl package
 import dsl._
 
+import scala.collection.mutable
+
 object Main {
   def main(args: Array[String]): Unit = {
 
@@ -51,26 +53,45 @@ object Main {
     )*/
 
     val finalState = e.run(
-      Assign(Variable("x"), Value(2)),
+//      Assign(Variable("x"), Value(2)),
 
       DefineClass("Point", Constructor(
-        Display("creating a point", "x"),
-      ), Field("x", AccessModifiers.PUBLIC), Field("y")),
+//        Display("creating a point", "x"),
+        Assign(This("x"), Value(10))
+      ), Field("x", AccessModifiers.PUBLIC), Field("y"),
+        dsl.Method("display",
+          Assign(Variable("s"), This("x")),
+          Return(This("x"))
+      )),
+
       Assign(Variable("p1"), NewObject("Point")),
 
       DefineClass("3DPoint", Constructor(
-        Display("creating a 3d point", "x"),
-        Assign(This("z"), Value(200))
+//        Display("creating a 3d point", "x"),
+        Assign(This("z"), Value(200)),
+        Assign(This("x"), Value(2000))
       ),
         Field("z"), Extends("Point")
       ),
+
       Assign(Variable("p2"), NewObject("3DPoint")),
+      InvokeMethod(Variable("r"), "p2", "display"),
       PrintStack()
     )
 
     println(finalState)
+    println("r: " + finalState("r"))
     println("done")
 
+    val s = mutable.Stack.empty[Int]
 
+    s.push(1)
+    s.push(2)
+    s.push(3)
+    s.push(4)
+
+    s(1) = 9
+
+    println(s)
   }
 }

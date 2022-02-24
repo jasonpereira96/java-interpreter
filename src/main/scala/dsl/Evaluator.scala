@@ -3,6 +3,8 @@ package dsl
 import scala.collection.{immutable, mutable}
 import dsl.Constants._
 
+import scala.collection.mutable.Map
+
 
 class Evaluator {
   /**
@@ -27,18 +29,18 @@ class Evaluator {
    */
   private def setState(newState: mutable.Map[String, Value]): Unit = {
     val oldScopeRecord = this.stack.pop()
-    this.stack.push(new ScopeRecord(oldScopeRecord.getName(), newState))
+    this.stack.push(new ScopeRecord(oldScopeRecord.getName(), newState, thisVal = oldScopeRecord.getThis))
   }
 
   /**
    * Pushes a new Map on the stack. Called when entering a new scope.
    * @oaram name The name of the scope to be created
    */
-  private def pushStackFrame(name: String = UNNAMED, thisVal: dsl.Object = null): Unit = {
+  private def pushStackFrame(name: String = UNNAMED, state: Map[String, Value] = Map.empty[String, Value], thisVal: dsl.Object = null): Unit = {
     if (thisVal == null) {
-      this.stack.push(new ScopeRecord(name))
+      this.stack.push(new ScopeRecord(name, state))
     } else {
-      this.stack.push(new ScopeRecord(name, thisVal=thisVal))
+      this.stack.push(new ScopeRecord(name, state, thisVal=thisVal))
     }
   }
 
@@ -170,10 +172,10 @@ class Evaluator {
         }*/
 
         if (isFieldAccessible(currentObject, fieldName)) {
-          Value(sr.getThis)
+          sr.getThis.getField(fieldName)
+        } else {
+          throw new Exception(s"Field $fieldName is not accessible")
         }
-        throw new Exception(s"Field $fieldName is not accessible")
-
       }
       case Variable(name) =>
         try {
@@ -186,7 +188,7 @@ class Evaluator {
               Value(v)
           }
         } catch {
-          case _ :Throwable => throw new Exception(s"dsl.Variable $name not found")
+          case _ :Throwable => throw new Exception(s"dsl.Variable $name not defined")
         }
       case ScopeResolvedVariable(scopeName: String, varName) =>
         try {
@@ -203,7 +205,7 @@ class Evaluator {
               Value(v)
           }
         } catch {
-          case _ :Throwable => throw new Exception(s"dsl.Variable $varName not found")
+          case _ :Throwable => throw new Exception(s"dsl.Variable $varName not defined")
         }
       case Union(exp1, exp2) =>
         val v1 = evaluate(exp1)
@@ -258,16 +260,10 @@ class Evaluator {
           // at this we know that the class exists because getClassDef handles error checking
 
           val o = createObject(className)
-
-          pushStackFrame(s"Constructor call of ${classDef.name}", thisVal = o)
-          // this is dangerous and may have deadly side effects :'(
-          for (c <- classDef.getConstructor) {
-            execute(c)
-          }
-          popStackFrame()
           Value(o)
 
         } catch {
+              // wrong
           case _ :Throwable => throw new Exception(s"class $className is not defined in this scope")
         }
       }
@@ -356,7 +352,8 @@ class Evaluator {
         variable.value match {
           case set: mutable.HashSet[Value] =>
             println("{" + set.map[Any](v => v.value).mkString(",") + "}")
-
+          case v: dsl.Value =>
+            println(v.value)
           case x =>
             println(x)
         }
@@ -399,15 +396,38 @@ class Evaluator {
 
         if (mdo.isDefined) {
           val md = mdo.get
+          val map = mutable.Map.empty[String, Value]
 
-          this.pushStackFrame(thisVal = object_)
+          for (param <- params) {
+            map.addOne((param._1, evaluate(param._2))) // weird
+          }
+
+          this.pushStackFrame(name=s"method call of $methodName", map, thisVal = object_)
+          // TODO if a method call has args, we need to shove them into the stack frame before
+          // running the method!
           for (c <- md.commands) {
             this.execute(c)
           }
           this.popStackFrame()
+
+          // handling the return value if any
+          val sr: ScopeRecord = this.stack.head
+          if (sr.hasBinding(RETURN)) {
+            val retValue: Value = sr.getState()(RETURN)
+            this.stack.head.deleteBinding(RETURN)
+
+            // _ indicates that we don't care about the return value
+            if (returnee.name != "_") {
+              execute(Assign(returnee, retValue))
+            }
+          }
         } else {
           throw new Exception(s"Method $methodName not found on object of class $className")
         }
+      }
+
+      case Return(exp: Expression) => {
+        this.stack(1).setBinding(Constants.RETURN, evaluate(exp))
       }
       case PrintStack() => {
         for (sr <- this.stack) {
@@ -472,17 +492,21 @@ class Evaluator {
   }
 
   private def createObject(className: String): dsl.Object = {
-    // TODO we'll have to call the constructor here of the super class to initialize the object WTF
     assert(this.classTable.contains(className))
     val classDef = getClassDef(className)
     val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
 
-    if (parentClassName != null && classTable.contains(parentClassName)) {
+    if (parentClassName != null) {
       val parentClassDef = getClassDef(parentClassName)
-      return new Object(className,
+      val o = new Object(className,
         classDef.getFieldInfo().toSeq ++ parentClassDef.getFieldInfo().toSeq :_*)
+      // invoking all the constructors to initialize the object
+      invokeAllConstructors(o, className)
+      o
     } else {
-      return new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
+      val o = new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
+      invokeAllConstructors(o, className)
+      o
     }
   }
 
@@ -539,5 +563,30 @@ class Evaluator {
 
   private def hasField(cd: ClassDefinition, fieldName: String): Boolean = {
     return cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
+  }
+
+  private def hasParentClass(className: String) : Boolean = {
+    assert(classTable.contains(className))
+    val classDef = getClassDef(className)
+    return classDef.hasParentClass()
+  }
+
+  private def invokeAllConstructors(o: dsl.Object, className: String): Unit = {
+    val classDef = getClassDef(className)
+    if (classDef.hasParentClass()) {
+      invokeAllConstructors(o, classDef.getParentClassName())
+    }
+    invokeConstructor(o, className)
+  }
+
+  private def invokeConstructor(o: dsl.Object, className: String) = {
+    val classDef = getClassDef(className)
+    pushStackFrame(s"Constructor call of ${classDef.getName}", thisVal = o)
+    println(s"Constructor call of $className")
+    // this is dangerous and may have deadly side effects :'(
+    for (c <- classDef.getConstructor) {
+      execute(c)
+    }
+    popStackFrame()
   }
 }

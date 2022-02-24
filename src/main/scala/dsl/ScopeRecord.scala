@@ -17,4 +17,12 @@ class ScopeRecord(val name: String = UNNAMED, val state: Map[String, Value] = Ma
   }
 
   def hasThis: Boolean = this.thisVal != null
+
+  def setBinding(key: String, v: Value): Unit = {
+    this.state(key) = v
+  }
+  def deleteBinding(key: String): Unit = {
+    this.state.remove(key)
+  }
+  def hasBinding(key: String): Boolean = this.state.contains(key)
 }

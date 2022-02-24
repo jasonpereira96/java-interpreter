@@ -279,7 +279,8 @@ class Evaluator {
    */
   private def execute(command: Command): Unit = {
     command match {
-
+      case Print(message) =>
+        println(message)
       case CreateNewSet(name) =>
         val state = this.getState()
         val newState = state + (name -> Value(mutable.Set.empty[Value]))

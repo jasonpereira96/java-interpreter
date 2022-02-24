@@ -1,4 +1,4 @@
-import dsl._
+import dsl.{Print, _}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -104,6 +104,50 @@ class Test08_Classes extends AnyFlatSpec with Matchers {
         assert(false)
       }
     }
+  }
+  it should "create a class and a child class and override methods" in {
+    val evaluator = new Evaluator()
+
+    val finalState = evaluator.run(
+      DefineClass("Animal",
+        Constructor(
+        ),
+        Method("makeNoise",
+          Print("generic animal noise....."),
+          dsl.Return(Value("generic animal noise....."))
+        )
+      ),
+      DefineClass("Cat",
+        Extends("Animal"),
+        Constructor(
+        ),
+        Method("makeNoise",
+          Print("meow...."),
+          Return(Value("meow....."))
+        )
+      ),
+      DefineClass("Dog",
+        Extends("Animal"),
+        Constructor(
+        ),
+        Method("makeNoise",
+          Print("woof...."),
+          Return(Value("woof....."))
+        )
+      ),
+
+      Assign(Variable("animal"), NewObject("Animal")),
+      Assign(Variable("cat"), NewObject("Cat")),
+      Assign(Variable("dog"), NewObject("Dog")),
+      dsl.InvokeMethod(Variable("animalNoise"), "animal", "makeNoise"),
+      dsl.InvokeMethod(Variable("catNoise"), "cat", "makeNoise"),
+      dsl.InvokeMethod(Variable("dogNoise"), "dog", "makeNoise")
+    )
+
+    assert(finalState.contains("animal"))
+    assert(finalState("animalNoise") == Value("generic animal noise....."))
+    assert(finalState("catNoise") == Value("meow....."))
+    assert(finalState("dogNoise") == Value("woof....."))
   }
 }
 

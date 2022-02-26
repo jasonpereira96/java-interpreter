@@ -3,7 +3,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class Test08_Classes extends AnyFlatSpec with Matchers {
-  behavior of "testing union, intersection and difference"
+  behavior of "testing the functionality of classes"
 
   it should "create a class and use it" in {
     val evaluator = new Evaluator()
@@ -148,6 +148,74 @@ class Test08_Classes extends AnyFlatSpec with Matchers {
     assert(finalState("animalNoise") == Value("generic animal noise....."))
     assert(finalState("catNoise") == Value("meow....."))
     assert(finalState("dogNoise") == Value("woof....."))
+  }
+
+  it should "not allow multiple inheritance" in {
+    val evaluator = new Evaluator()
+
+    try {
+      val finalState = evaluator.run(
+        DefineClass("Student",
+          Constructor()
+        ),
+        DefineClass("Instructor",
+          Constructor(),
+        ),
+        DefineClass("Teaching_Assistant",
+          Extends("Student"),
+          Extends("Instructor"),
+          Constructor(),
+        )
+      )
+      assert(false)
+    } catch {
+      case _: Throwable => {
+        // reaches here because it throws an exception
+      }
+    }
+  }
+
+  it should "create a class and a child class and inherit methods" in {
+    val evaluator = new Evaluator()
+
+    val finalState = evaluator.run(
+      DefineClass("Person",
+        Field("name"),
+        Constructor(
+          Assign(This("name"), Value(""))
+        ),
+        Method("setName",
+          Assign(This("name"), Variable("name"))
+        )
+      ),
+      DefineClass("Student",
+        Extends("Person"),
+        Field("gpa"),
+        Constructor(
+          Assign(This("gpa"), Value(0))
+        ),
+        Method("setGpa",
+          Assign(This("gpa") , Variable("gpa"))
+        ),
+        Method("getGpa",
+          Return(This("gpa"))
+        ),
+        Method("getName",
+          Return(This("name"))
+        )
+      ),
+
+      Assign(Variable("student"), NewObject("Student")),
+      dsl.InvokeMethod(Variable("_"), "student", "setName", ("name", Value("Jason"))),
+      dsl.InvokeMethod(Variable("_"), "student", "setGpa", ("gpa", Value(4.0))),
+      dsl.InvokeMethod(Variable("studentName"), "student", "getName"),
+      dsl.InvokeMethod(Variable("studentGpa"), "student", "getGpa")
+    )
+
+    assert(finalState.contains("studentName"))
+    assert(finalState.contains("studentGpa"))
+    assert(finalState("studentGpa") == Value(4.0))
+    assert(finalState("studentName") == Value("Jason"))
   }
 }
 

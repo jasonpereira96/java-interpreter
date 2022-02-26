@@ -255,17 +255,11 @@ class Evaluator {
         Value(set1.contains(v))
 
       case NewObject(className, args @_*) => {
-        try {
-          val classDef = this.getClassDef(className)
-          // at this we know that the class exists because getClassDef handles error checking
+        val classDef = this.getClassDef(className)
+        // at this we know that the class exists because getClassDef handles error checking
 
-          val o = createObject(className)
-          Value(o)
-
-        } catch {
-              // wrong
-          case _ :Throwable => throw new Exception(s"class $className is not defined in this scope")
-        }
+        val o = createObject(className)
+        Value(o)
       }
 
       case _ =>
@@ -553,7 +547,7 @@ class Evaluator {
         }
       }
     }
-    throw new Exception()
+    throw new Exception(s"Field $fieldName not present on class ${cd.getName}")
   }
 
 //  private def isParentField(cd: ClassDefinition, fieldName: String): Boolean = {
@@ -563,7 +557,11 @@ class Evaluator {
 //  }
 
   private def hasField(cd: ClassDefinition, fieldName: String): Boolean = {
-    return cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
+    if (cd.hasParentClass()) {
+      return cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
+    } else {
+      return cd.hasField(fieldName)
+    }
   }
 
   private def hasParentClass(className: String) : Boolean = {

@@ -3,6 +3,9 @@
 ## Index
 - [Commands](https://github.com/jasonpereira96/CS-474-Assignment-1#commands)
 - [Expressions](https://github.com/jasonpereira96/CS-474-Assignment-1#expressions)
+- [Helper Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#helper-classes)
+- [AccessModifiers](https://github.com/jasonpereira96/CS-474-Assignment-2#accessmodifiers)
+- [Using Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#using-classes)
 - [Examples on using the language](https://github.com/jasonpereira96/CS-474-Assignment-1#examples-on-using-my-language)
 - [Installing and Running](https://github.com/jasonpereira96/CS-474-Assignment-1#installing-and-running)
 - [Implementation Details](https://github.com/jasonpereira96/CS-474-Assignment-1#implementation-details)

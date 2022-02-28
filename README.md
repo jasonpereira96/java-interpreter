@@ -499,7 +499,7 @@ class Car {
     Car() {
         this.name = "Honda";
     }
-    public void setName(name) {
+    public void setName(String name) {
         this.name = name;
     }
     public String getName() {
@@ -516,17 +516,18 @@ class Car {
         }
         public String getCarName() {
             // access the outer class variable
-            return this.Car.name;
+            return Car.this.name;
         }
     }
 }
 
-public class Main {
+public class MyClass {
     public static void main(String args[]) {
         Car car = new Car();
         car.setName("Ford");
-        Car.Engine engine = new Car.Engine();
+        Car.Engine engine = car.new Engine();
         String carName = engine.getCarName();
+        System.out.println(carName);
     }
 }
 ```

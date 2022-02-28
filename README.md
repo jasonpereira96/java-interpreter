@@ -457,7 +457,7 @@ public class Main {
 
 ```
 
-## Example 3
+## Example 3 - Nested Classes
 ```scala
 import dsl._
 val evaluator = new Evaluator()

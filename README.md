@@ -76,6 +76,9 @@ Invokes a method on an object. `returnee` is the name of the variable you want t
 ### `dsl.Return(exp: Expression)`
 Returns a value from a method. Can only be used inside a method.
 
+### `dsl.Print(message: Any)`
+Used to print to the console.
+
 ### Expressions
 A value is a single instance of any primitive type or Object.
 Examples of values are: 3, 5, 4.56, "hello", new Object(), etc.

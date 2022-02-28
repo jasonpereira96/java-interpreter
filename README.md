@@ -1,4 +1,4 @@
-# Homework 1 Report - Jason Pereira (676827009)
+# Homework 2 Report - Jason Pereira (676827009)
 
 ## Index
 - [Commands](https://github.com/jasonpereira96/CS-474-Assignment-1#commands)

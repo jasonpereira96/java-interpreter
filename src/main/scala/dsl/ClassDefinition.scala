@@ -76,7 +76,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
 
   def getFieldAccessModifier(fieldName: String): AccessModifiers = {
     if (this.fields.contains(fieldName)) { // checking only on this class, not parent classes
-      return this.fields(fieldName).getAccessModifier()
+      return this.fields(fieldName).getAccessModifier
     } else {
       throw new Exception()
     }

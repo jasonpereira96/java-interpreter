@@ -3,6 +3,7 @@ package dsl
 import scala.collection.{immutable, mutable}
 import dsl.Constants.*
 
+import scala.annotation.tailrec
 import scala.collection.mutable.Map
 
 
@@ -36,7 +37,7 @@ class Evaluator {
    * Pushes a new Map on the stack. Called when entering a new scope.
    * @oaram name The name of the scope to be created
    */
-  private def pushStackFrame(name: String = UNNAMED, state: Map[String, Value] = Map.empty[String, Value], thisVal: dsl.Object = null): Unit = {
+  private def pushStackFrame(name: String = UNNAMED, state: mutable.Map[String, Value] = mutable.Map.empty[String, Value], thisVal: dsl.Object = null): Unit = {
     if (thisVal == null) {
       this.stack.push(new ScopeRecord(name, state))
     } else {
@@ -394,15 +395,16 @@ class Evaluator {
         }
     }
   }
+  @tailrec
   private def lookupMethod(className: String, methodName: String): Option[MethodDefinition] = {
     val cd = getClassDef(className)
 
     if (cd.hasMethod(methodName)) {
-      return Some(cd.getMethodDefinition(methodName)) // if the method is found on the current class
+      Some(cd.getMethodDefinition(methodName)) // if the method is found on the current class
     } else if (cd.hasParentClass()) {
-      return lookupMethod(cd.getParentClassName(), methodName) // check the parent classes
+      lookupMethod(cd.getParentClassName(), methodName) // check the parent classes
     } else {
-      return None
+      None
     }
   }
 
@@ -446,7 +448,7 @@ class Evaluator {
     if (this.classTable.contains(className)) {
       return Some(classTable(className))
     }
-    return None
+    None
   }
 
   private def createObject(className: String, outerClassObjectName: String): dsl.Object = {
@@ -489,7 +491,7 @@ class Evaluator {
           return None
       }
     }
-    return None
+    None
   }
 
   private def isFieldAccessible(currentObject: dsl.Object, fieldName: String): Boolean = {
@@ -522,18 +524,19 @@ class Evaluator {
 //    }
 //  }
 
+  @tailrec
   private def hasField(cd: ClassDefinition, fieldName: String): Boolean = {
     if (cd.hasParentClass()) {
-      return cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
+      cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
     } else {
-      return cd.hasField(fieldName)
+      cd.hasField(fieldName)
     }
   }
 
   private def hasParentClass(className: String) : Boolean = {
     assert(classTable.contains(className))
     val classDef = getClassDef(className)
-    return classDef.hasParentClass()
+    classDef.hasParentClass()
   }
 
   private def invokeAllConstructors(o: dsl.Object, className: String): Unit = {
@@ -605,6 +608,7 @@ class Evaluator {
     Some(outerObject)
   }
 
+  @tailrec
   private def getOuterObject_(currentObject: dsl.Object, outerClassName: String): dsl.Object = {
     if (currentObject.getClassName == outerClassName) {
       return currentObject
@@ -612,6 +616,6 @@ class Evaluator {
     if (!currentObject.hasOuterObject()) {
       return null
     }
-    return getOuterObject_(currentObject.getOuterObject(), outerClassName)
+    getOuterObject_(currentObject.getOuterObject(), outerClassName)
   }
 }

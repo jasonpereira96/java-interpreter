@@ -140,7 +140,7 @@ class Evaluator {
   private def evaluate(exp: Expression): Value = {
     exp match {
       case Value(v) => Value(v)
-      case This(fieldName, outerClassName) => {
+      case This(fieldName, outerClassName) =>
         val sr = this.stack.head
         assert(sr.hasThis)
         val currentObject = sr.getThis
@@ -150,13 +150,11 @@ class Evaluator {
           val outerObject = this.getOuterObject(currentObject, outerClassName)
 
           outerObject match {
-            case Some(o) => {
+            case Some(o) =>
               return o.getField(fieldName)
-            }
-            case None => {
+            case None =>
               // failed to find outer class object
               throw new Exception(s"Failed to find outer class object for outer class $outerClassName")
-            }
           }
         }
 
@@ -165,7 +163,6 @@ class Evaluator {
         } else {
           throw new Exception(s"Field $fieldName is not accessible")
         }
-      }
       case Variable(name) =>
         try {
           val v = lookup(name).value
@@ -182,7 +179,7 @@ class Evaluator {
       case ScopeResolvedVariable(scopeName: String, varName) =>
         try {
 
-          if (this.stack.filter(_.getName() == scopeName).length == 0) {
+          if (!this.stack.exists(_.getName() == scopeName)) {
             throw new Exception(s"dsl.Scope name $scopeName not found")
           }
           val v = lookupWithScopeName(scopeName, varName).value
@@ -199,8 +196,6 @@ class Evaluator {
       case Union(exp1, exp2) =>
         val v1 = evaluate(exp1)
         val v2 = evaluate(exp2)
-        assert(v1.value.isInstanceOf[mutable.Set[Value]])
-        assert(v2.value.isInstanceOf[mutable.Set[Value]])
 
         val set1: mutable.Set[Value] = v1.value.asInstanceOf[mutable.Set[Value]]
         val set2: mutable.Set[Value] = v2.value.asInstanceOf[mutable.Set[Value]]
@@ -243,13 +238,12 @@ class Evaluator {
         val v: Value = expressions(1)
         Value(set1.contains(v))
 
-      case NewObject(className, outerClassObjectName: String) => {
+      case NewObject(className, outerClassObjectName: String) =>
         val classDef = this.getClassDef(className)
         // at this we know that the class exists because getClassDef handles error checking
 
         val o = createObject(className, outerClassObjectName)
         Value(o)
-      }
 
       case _ =>
         Value(99)
@@ -270,16 +264,14 @@ class Evaluator {
         this.setState(newState)
       case Assign(variable: Any, exp) =>
         variable match {
-          case Variable(name) => {
+          case Variable(name) =>
             val newState = this.getState() + (name -> evaluate(exp))
             this.setState(newState)
-          }
-          case ScopeResolvedVariable(scopeName: String, varName: String) => {
+          case ScopeResolvedVariable(scopeName: String, varName: String) =>
             val sr = lookupScope(scopeName)
             val state = sr.getState()
             state(varName) = evaluate(exp)
-          }
-          case This(fieldName: String, outerClassName) => {
+          case This(fieldName: String, outerClassName) =>
             val sr = this.stack.head
             val currentObject = sr.thisVal
 
@@ -288,14 +280,12 @@ class Evaluator {
               val outerObject = this.getOuterObject(currentObject, outerClassName)
 
               outerObject match {
-                case Some(o) => {
+                case Some(o) =>
                   o.setField(fieldName, evaluate(exp))
                   return
-                }
-                case None => {
+                case None =>
                   // failed to find outer class object
                   throw new Exception(s"Failed to find outer class object for outer class $outerClassName")
-                }
               }
             }
 
@@ -304,10 +294,8 @@ class Evaluator {
             } else {
               throw new Exception(s"Invalid permissions for field $fieldName")
             }
-          }
-          case _ => {
+          case _ =>
             throw new Error("Assign() parameter type invalid")
-          }
         }
       case Insert(ident, expressionsSeq @ _*) =>
         val name = ident
@@ -357,10 +345,9 @@ class Evaluator {
           case x =>
             println(x)
         }
-      case DefineClass(name, options @ _*) => {
+      case DefineClass(name, options @ _*) =>
         this.processClassDef(command.asInstanceOf[DefineClass])
-      }
-      case InvokeMethod(returnee: Variable, objectName: String, methodName: String, params @_*) => {
+      case InvokeMethod(returnee: Variable, objectName: String, methodName: String, params @_*) =>
         val objectValue = lookup(objectName)
         assert(objectValue.value.isInstanceOf[dsl.Object])
         val object_ = objectValue.value.asInstanceOf[dsl.Object]
@@ -398,16 +385,13 @@ class Evaluator {
         } else {
           throw new Exception(s"Method $methodName not found on object of class $className")
         }
-      }
 
-      case Return(exp: Expression) => {
+      case Return(exp: Expression) =>
         this.stack(1).setBinding(Constants.RETURN, evaluate(exp))
-      }
-      case PrintStack() => {
+      case PrintStack() =>
         for (sr <- this.stack) {
           println(sr)
         }
-      }
     }
   }
   private def lookupMethod(className: String, methodName: String): Option[MethodDefinition] = {
@@ -473,13 +457,13 @@ class Evaluator {
     if (parentClassName != null) {
       val parentClassDef = getClassDef(parentClassName)
       val o = new Object(className,
-        classDef.getFieldInfo().toSeq ++ parentClassDef.getFieldInfo().toSeq :_*)
+        classDef.getFieldInfo() ++ parentClassDef.getFieldInfo() :_*)
       // invoking all the constructors to initialize the object
       invokeAllConstructors(o, className)
       setOuterObject(o, outerClassObjectName)
       o
     } else {
-      val o = new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
+      val o = new dsl.Object(className, classDef.getFieldInfo() :_*)
       setOuterObject(o, outerClassObjectName)
       invokeAllConstructors(o, className)
       o
@@ -496,15 +480,13 @@ class Evaluator {
     var cdo: Option[ClassDefinition] = getClassDefOption(className)
     while (true) { // look up the inheritance chain searching for the field
       cdo match {
-        case Some(cd) => {
+        case Some(cd) =>
           if (cd.hasField(fieldName)) {
             return Some(cd.getName)
           }
           cdo = getClassDefOption(cd.getParentClassName())
-        }
-        case None => { // reached the end of the inheritance chain
+        case None => // reached the end of the inheritance chain
           return None
-        }
       }
     }
     return None
@@ -517,7 +499,7 @@ class Evaluator {
     if (hasField(cd, fieldName)) {
       val classNameOption = getClassNameOfField(fieldName, currentObject.getClassName)
       classNameOption match {
-        case Some(fieldClassName) => {
+        case Some(fieldClassName) =>
           val fieldClassDef = getClassDef(fieldClassName)
           if (fieldClassDef.getFieldAccessModifier(fieldName) == AccessModifiers.PUBLIC) {
             return true
@@ -527,10 +509,8 @@ class Evaluator {
           } else {
             return fieldClassDef.getFieldAccessModifier(fieldName) == AccessModifiers.PROTECTED
           }
-        }
-        case None => {
+        case None =>
           throw new Exception("field is not present or inherited on this class")
-        }
       }
     }
     throw new Exception(s"Field $fieldName not present on class ${cd.getName}")
@@ -564,7 +544,7 @@ class Evaluator {
     invokeConstructor(o, className)
   }
 
-  private def invokeConstructor(o: dsl.Object, className: String) = {
+  private def invokeConstructor(o: dsl.Object, className: String): Unit = {
     val classDef = getClassDef(className)
     pushStackFrame(s"Constructor call of ${classDef.getName}", thisVal = o)
     println(s"Constructor call of $className")
@@ -580,7 +560,7 @@ class Evaluator {
     val name = dc.className
 
     // check for multiple inheritance
-    if (options.filter(option => option.isInstanceOf[Extends]).length > 1) {
+    if (options.count(option => option.isInstanceOf[Extends]) > 1) {
       throw new Exception(s"Two or more extends clauses found. Multiple inheritance is not allowed.")
     }
 
@@ -600,18 +580,16 @@ class Evaluator {
     // check for single inheritance
     for (o: ClassDefinitionOption <- options) {
       o match {
-        case Extends(parentClassName) => {
+        case Extends(parentClassName) =>
           // check whether the parent class actually exists
           if (!this.classTable.contains(parentClassName)) {
             throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
           }
           // set the name of the parent class given in the extends clause
           classDefinition.setParentClass(parentClassName)
-        }
-        case NestedClass(nestedClassName, nestedClassOptions @ _*) => {
+        case NestedClass(nestedClassName, nestedClassOptions @ _*) =>
           processClassDef(dsl.DefineClass(nestedClassName , nestedClassOptions *),  outerClassName=name)
-        }
-        case _ => {}
+        case _ =>
       }
     }
     //        val newState = this.getState() + (name -> Value(classDefinition))

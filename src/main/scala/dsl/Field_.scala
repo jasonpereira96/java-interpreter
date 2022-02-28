@@ -3,9 +3,9 @@ package dsl
 import dsl.AccessModifiers.AccessModifiers
 
 class Field_(val name: String, val value: Value = null, val accessModifier: AccessModifiers = AccessModifiers.PUBLIC) {
-  def getValue(): Value = value
+  def getValue: Value = value
 
-  def getAccessModifier(): AccessModifiers = accessModifier
+  def getAccessModifier: AccessModifiers = accessModifier
 
   def getName: String = name
 
@@ -13,6 +13,6 @@ class Field_(val name: String, val value: Value = null, val accessModifier: Acce
     if (value == null) {
       return None
     }
-    return Some(value)
+    Some(value)
   }
 }

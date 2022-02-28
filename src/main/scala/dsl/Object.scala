@@ -11,14 +11,14 @@ class Object(val className: String, val fields: dsl.Field_ *) {
 
   for (field: dsl.Field_ <- fields.toList) {
     val fieldName: String = field.getName
-    val accessModifier = field.getAccessModifier()
-    val fieldValue = field.getValue()
+    val accessModifier = field.getAccessModifier
+    val fieldValue = field.getValue
     this.fieldMap.addOne(fieldName, new Field_(fieldName, fieldValue, accessModifier))
   }
 
-  def setField(name: String, value: Value) = {
+  def setField(name: String, value: Value): Unit = {
     if (hasField(name)) {
-      val accessModifier = this.fieldMap(name).getAccessModifier()
+      val accessModifier = this.fieldMap(name).getAccessModifier
       this.fieldMap(name) = new Field_(name, value, accessModifier)
     } else {
       throw new Exception(s"object does not have field $name")
@@ -32,7 +32,7 @@ class Object(val className: String, val fields: dsl.Field_ *) {
 
   def getField(name: String): Value = {
     if (hasField(name)) {
-      this.fieldMap(name).getValue()
+      this.fieldMap(name).getValue
     } else {
       throw new Exception(s"object does not have field $name")
     }
@@ -40,21 +40,21 @@ class Object(val className: String, val fields: dsl.Field_ *) {
 
   def getAccessModifier(name: String): AccessModifiers = {
     if (hasField(name)) {
-      this.fieldMap(name).getAccessModifier()
+      this.fieldMap(name).getAccessModifier
     } else {
       throw new Exception(s"object does not have field $name")
     }
   }
 
   def getOuterObject(): dsl.Object = {
-    return this.outerObject.head
+    this.outerObject.head
   }
 
   def hasOuterObject(): Boolean = {
-    return this.outerObject.size == 1
+    this.outerObject.size == 1
   }
 
-  def setOuterObject(o: dsl.Object) = {
+  def setOuterObject(o: dsl.Object): Unit = {
     this.outerObject.addOne(o)
   }
 

@@ -1,7 +1,7 @@
 package dsl
 
 import scala.collection.{immutable, mutable}
-import dsl.Constants._
+import dsl.Constants.*
 
 import scala.collection.mutable.Map
 
@@ -140,36 +140,25 @@ class Evaluator {
   private def evaluate(exp: Expression): Value = {
     exp match {
       case Value(v) => Value(v)
-      case This(fieldName) => {
+      case This(fieldName, outerClassName) => {
         val sr = this.stack.head
         assert(sr.hasThis)
         val currentObject = sr.getThis
         val className = currentObject.getClassName
 
-        /*
-        classNameOfFieldOption match {
-          case Some(classNameOfField) => {
-            if (classNameOfField == currentObject.getClassName) {
-              // its one of the fields on the class itself so any access level will do
-              return currentObject.getField(fieldName)
-            } else {
-              // its one of the fields of the parent class
-              val acm = getClassDef(className).getFieldAccessModifier(fieldName)
+        if (outerClassName != "") {
+          val outerObject = this.getOuterObject(currentObject, outerClassName)
 
-              acm match {
-                case AccessModifiers.PRIVATE => {
-                  throw new Exception(s"Field $fieldName has private access")
-                }
-                case _ => {
-                  currentObject.getField(fieldName)
-                }
-              }
+          outerObject match {
+            case Some(o) => {
+              return o.getField(fieldName)
+            }
+            case None => {
+              // failed to find outer class object
+              throw new Exception(s"Failed to find outer class object for outer class $outerClassName")
             }
           }
-          case None => {
-            throw new Exception(s"field $fieldName not found in class $className")
-          }
-        }*/
+        }
 
         if (isFieldAccessible(currentObject, fieldName)) {
           sr.getThis.getField(fieldName)
@@ -254,11 +243,11 @@ class Evaluator {
         val v: Value = expressions(1)
         Value(set1.contains(v))
 
-      case NewObject(className, args @_*) => {
+      case NewObject(className, outerClassObjectName: String) => {
         val classDef = this.getClassDef(className)
         // at this we know that the class exists because getClassDef handles error checking
 
-        val o = createObject(className)
+        val o = createObject(className, outerClassObjectName)
         Value(o)
       }
 
@@ -290,10 +279,26 @@ class Evaluator {
             val state = sr.getState()
             state(varName) = evaluate(exp)
           }
-          // TODO
-          case This(fieldName: String) => {
+          case This(fieldName: String, outerClassName) => {
             val sr = this.stack.head
             val currentObject = sr.thisVal
+
+            if (outerClassName != "") {
+
+              val outerObject = this.getOuterObject(currentObject, outerClassName)
+
+              outerObject match {
+                case Some(o) => {
+                  o.setField(fieldName, evaluate(exp))
+                  return
+                }
+                case None => {
+                  // failed to find outer class object
+                  throw new Exception(s"Failed to find outer class object for outer class $outerClassName")
+                }
+              }
+            }
+
             if (isFieldAccessible(currentObject, fieldName)) {
               currentObject.setField(fieldName, evaluate(exp))
             } else {
@@ -353,33 +358,7 @@ class Evaluator {
             println(x)
         }
       case DefineClass(name, options @ _*) => {
-        // check for multiple inheritance
-        if (options.filter(option => option.isInstanceOf[Extends]).length > 1) {
-          throw new Exception(s"Two or more extends clauses found. Multiple inheritance is not allowed.")
-        }
-
-        // need to check for class already defined
-        // TODO
-
-        val classDefinition = new ClassDefinition(name, options: _*)
-
-        // check for single inheritance
-        for (o: ClassDefinitionOption <- options) {
-          o match {
-            case Extends(parentClassName) => {
-                // check whether the parent class actually exists
-                if (!this.classTable.contains(parentClassName)) {
-                  throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
-                }
-                // set the name of the parent class given in the extends clause
-                classDefinition.setParentClass(parentClassName)
-            }
-            case _ => {}
-          }
-        }
-//        val newState = this.getState() + (name -> Value(classDefinition))
-//        this.setState(newState)
-        this.classTable(name) = classDefinition
+        this.processClassDef(command.asInstanceOf[DefineClass])
       }
       case InvokeMethod(returnee: Variable, objectName: String, methodName: String, params @_*) => {
         val objectValue = lookup(objectName)
@@ -394,7 +373,7 @@ class Evaluator {
           val map = mutable.Map.empty[String, Value]
 
           for (param <- params) {
-            map.addOne((param._1, evaluate(param._2))) // weird
+            map.addOne((param.parameterName, evaluate(param.value))) // weird
           }
 
           this.pushStackFrame(name=s"method call of $methodName", map, thisVal = object_)
@@ -486,7 +465,7 @@ class Evaluator {
     return None
   }
 
-  private def createObject(className: String): dsl.Object = {
+  private def createObject(className: String, outerClassObjectName: String): dsl.Object = {
     assert(this.classTable.contains(className))
     val classDef = getClassDef(className)
     val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
@@ -497,16 +476,23 @@ class Evaluator {
         classDef.getFieldInfo().toSeq ++ parentClassDef.getFieldInfo().toSeq :_*)
       // invoking all the constructors to initialize the object
       invokeAllConstructors(o, className)
+      setOuterObject(o, outerClassObjectName)
       o
     } else {
       val o = new dsl.Object(className, classDef.getFieldInfo().toSeq :_*)
+      setOuterObject(o, outerClassObjectName)
       invokeAllConstructors(o, className)
       o
     }
   }
 
+  private def setOuterObject(o: dsl.Object, outerClassObjectName: String): Unit = {
+    if (outerClassObjectName != "") {
+      o.setOuterObject(getState()(outerClassObjectName).value.asInstanceOf[dsl.Object])
+    }
+  }
+
   private def getClassNameOfField(fieldName: String, className: String): Option[String] = {
-    // TODO Implement this
     var cdo: Option[ClassDefinition] = getClassDefOption(className)
     while (true) { // look up the inheritance chain searching for the field
       cdo match {
@@ -587,5 +573,67 @@ class Evaluator {
       execute(c)
     }
     popStackFrame()
+  }
+
+  private def processClassDef(dc: dsl.DefineClass, outerClassName: String = null) : Unit = {
+    val options = dc.options
+    val name = dc.className
+
+    // check for multiple inheritance
+    if (options.filter(option => option.isInstanceOf[Extends]).length > 1) {
+      throw new Exception(s"Two or more extends clauses found. Multiple inheritance is not allowed.")
+    }
+
+    // need to check for class already defined
+    if (classTable.contains(name)) {
+      throw new Exception(s"class $name is already defined")
+    }
+
+    val classDefinition = new ClassDefinition(name, options: _*)
+
+    if (outerClassName != null) {
+      classDefinition.setOuterClass(outerClassName)
+    }
+
+    this.classTable(name) = classDefinition // adding here is a little dangerous
+
+    // check for single inheritance
+    for (o: ClassDefinitionOption <- options) {
+      o match {
+        case Extends(parentClassName) => {
+          // check whether the parent class actually exists
+          if (!this.classTable.contains(parentClassName)) {
+            throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
+          }
+          // set the name of the parent class given in the extends clause
+          classDefinition.setParentClass(parentClassName)
+        }
+        case NestedClass(nestedClassName, nestedClassOptions @ _*) => {
+          processClassDef(dsl.DefineClass(nestedClassName , nestedClassOptions *),  outerClassName=name)
+        }
+        case _ => {}
+      }
+    }
+    //        val newState = this.getState() + (name -> Value(classDefinition))
+    //        this.setState(newState)
+  }
+
+
+  private def getOuterObject(currentObject: dsl.Object, outerClassName: String): Option[dsl.Object] = {
+    val outerObject = getOuterObject_(currentObject, outerClassName)
+    if (outerObject == null) {
+      return None
+    }
+    Some(outerObject)
+  }
+
+  private def getOuterObject_(currentObject: dsl.Object, outerClassName: String): dsl.Object = {
+    if (currentObject.getClassName == outerClassName) {
+      return currentObject
+    }
+    if (!currentObject.hasOuterObject()) {
+      return null
+    }
+    return getOuterObject_(currentObject.getOuterObject(), outerClassName)
   }
 }

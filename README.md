@@ -59,6 +59,11 @@ further computation.
 Prints out a custom message followed by the contents of the variable
 specified by `identifier`.
 
+### `dsl.DefineClass(className: String, options: ClassDefinitionOption *`
+
+### `dsl.InvokeMethod(returnee: Variable, objectName: String, methodName: String, params: (String, Expression)*)`
+
+### `dsl.Return(exp: Expression)`
 
 ### Expressions
 A value is a single instance of any primitive type or Object.
@@ -116,6 +121,12 @@ Represents the value stored in variable **name**. Can be any type - including ob
 int, float.
 If **name** has not been defined previously, then using this construct
 will throw an error during execution.
+
+
+##  `ClassDefinitionOption`
+
+## `AccessModifiers`
+
 
 
 ## Examples on using my language

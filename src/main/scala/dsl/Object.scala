@@ -7,6 +7,7 @@ import scala.collection.mutable
 class Object(val className: String, val fields: dsl.Field_ *) {
 //class Object(val className: String, val fields: (String, AccessModifiers, Value)*) {
   private val fieldMap = mutable.Map.empty[String, Field_]
+  private val outerObject = mutable.Set.empty[dsl.Object]
 
   for (field: dsl.Field_ <- fields.toList) {
     val fieldName: String = field.getName
@@ -43,6 +44,18 @@ class Object(val className: String, val fields: dsl.Field_ *) {
     } else {
       throw new Exception(s"object does not have field $name")
     }
+  }
+
+  def getOuterObject(): dsl.Object = {
+    return this.outerObject.head
+  }
+
+  def hasOuterObject(): Boolean = {
+    return this.outerObject.size == 1
+  }
+
+  def setOuterObject(o: dsl.Object) = {
+    this.outerObject.addOne(o)
   }
 
 //  def setParentObject(o: dsl.Object) = {

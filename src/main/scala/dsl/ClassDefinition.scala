@@ -11,12 +11,14 @@ case class Constructor(commands: Command*) extends ClassDefinitionOption
 case class Field(fieldName: String, accessModifier: AccessModifiers = PUBLIC) extends ClassDefinitionOption
 case class Method(name: String, commands: Command*) extends ClassDefinitionOption
 case class Extends(name: String) extends ClassDefinitionOption
+case class NestedClass(className: String, options: ClassDefinitionOption *) extends ClassDefinitionOption
 
 class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
   private val fields = mutable.Map.empty[String, Field_] // why is this a map? maybe we can store the type of field
   private val methods = mutable.Map.empty[String, MethodDefinition]
   private val constructor = mutable.ListBuffer.empty[Command]
   private val parentClass = mutable.Set.empty[String]
+  private val outerClass = mutable.Set.empty[String]
 
 
   for (option <- options) {
@@ -38,6 +40,9 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
       //}
       case Extends(name) => {
         // just here to placate a match error since we're handling extends outside
+      }
+      case NestedClass(name, options @ _*) => {
+        // just here to placate a match error since we're handling nested class outside
       }
     }
   }
@@ -79,5 +84,19 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
 
   def getFieldInfo(): List[Field_] = {
     return this.fields.toList.map[Field_](x => x._2)
+  }
+
+  def setOuterClass(outerClassName: String): Unit = {
+    this.outerClass.addOne(outerClassName)
+  }
+  def hasOuterClass(): Boolean = {
+    this.outerClass.size == 1
+  }
+
+  def getOuterClassName(): String = {
+    if (this.outerClass.isEmpty) {
+      return null
+    }
+    return this.outerClass.toList.head
   }
 }

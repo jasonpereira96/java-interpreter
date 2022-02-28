@@ -134,13 +134,21 @@ If **name** has not been defined previously, then using this construct
 will throw an error during execution.
 
 ### `dsl.This(fieldName: String)`
-This construct is used to access an instance variable of an object in inside a method.
+This construct is used to access an instance variable of an object inside a method.
 Similar to:
 ```java
 this.x
 ```
 `This()` must be used everytime you want to set or get the value of an instance variable.
 Refer the **Classes** section and the test cases for usage.
+
+### `dsl.This(fieldName: String, outerClassName: String)`
+This construct is used to access an instance variable of an
+outer class of an object inside a method.
+Similar to:
+```java
+OuterClass.this.x
+```
 
 # Helper Classes
 

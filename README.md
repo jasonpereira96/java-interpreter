@@ -535,7 +535,7 @@ public class MyClass {
 }
 ```
 
-**Refer to the [test cases](https://github.com/jasonpereira96/CS-474-Assignment-1/tree/master/src/test/scala) for more extensive examples.**
+**Refer to the [test cases](https://github.com/jasonpereira96/CS-474-Assignment-2/tree/master/src/test/scala) for more extensive examples.**
 
 # Installing and running
 ## Steps:

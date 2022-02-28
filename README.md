@@ -60,10 +60,18 @@ Prints out a custom message followed by the contents of the variable
 specified by `identifier`.
 
 ### `dsl.DefineClass(className: String, options: ClassDefinitionOption *`
+Defines a class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
+Refer to the Using Classes section.
 
-### `dsl.InvokeMethod(returnee: Variable, objectName: String, methodName: String, params: (String, Expression)*)`
+### `dsl.NestedClass(className: String, options: ClassDefinitionOption *`
+Defines a nested class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
+Refer to the Using Classes section.
+
+### `dsl.InvokeMethod(returnee: Variable, objectName: String, methodName: String, params: Parameters*)`
+Invokes a method on an object. `returnee` is the name of the variable you want to store the return value in. To ignore the return value, pass in `_`.
 
 ### `dsl.Return(exp: Expression)`
+Returns a value from a method. Can only be used inside a method.
 
 ### Expressions
 A value is a single instance of any primitive type or Object.
@@ -122,12 +130,71 @@ int, float.
 If **name** has not been defined previously, then using this construct
 will throw an error during execution.
 
+### `dsl.This(fieldName: String)`
+This construct is used to access an instance variable of an object in inside a method.
+Similar to:
+```java
+this.x
+```
+`This()` must be used everytime you want to set or get the value of an instance variable.
+Refer the **Classes** section and the test cases for usage.
+
+# Helper Classes
 
 ##  `ClassDefinitionOption`
+These are the options that you can pass to a class definition to add properties to the class.
+Refer the classes example for usage.
+
+### `Constructor(commands: Command*)`
+Adds a constructor to the class. Takes as args the commands that make up the body of the constructor.
+Parameterized constructors are not supported.
+
+### `Field(fieldName: String, accessModifier: AccessModifiers = PUBLIC)`
+Adds a field to the class. Takes as params the field name and access modifier.
+The default access modifier is `PUBLIC`
+
+### `Method(name: String, commands: Command*)`
+Adds a method to the class. Takes as params the commands that make up the body of the method.
+
+### `Extends(name: String)` 
+Adds an extends clause to the class. `name` is the name of the class to extend.
+Equivalent to Java's construct 
+```java
+class Student extends Person {
+    // ...
+}
+```
+
+### `NestedClass(className: String, options: ClassDefinitionOption *)`
+Adds an nested class inside the class. `className` is the name of the nested class.
+Equivalent to Java's construct
+```java
+class A {
+    int x;
+    class B {
+        int y;
+    }
+}
+```
 
 ## `AccessModifiers`
 
+There are 3 access modifiers that you can specify while declaring a field
+of a class. If no access modifier is specified, then the field is
+public by default.
 
+- `AccessModifiers.PUBLIC`
+- `AccessModifiers.PROTECTED`
+- `AccessModifiers.PRIVATE`
+
+### `AccessModifiers.PUBLIC`
+Everyone can access these fields
+
+### `AccessModifiers.PROTECTED`
+The methods of the class and its subclass can access protected fields
+
+### `AccessModifiers.PRIVATE`
+Only the methods of the class can access these fields
 
 ## Examples on using my language
 Aside from the constructs defined above, there are some other
@@ -265,11 +332,11 @@ object Main {
     val s1 = CreateNewSet("A")
     val s2 = Assign("x", Value("outermost x"))
     val s3 = Assign("y", Value("outermost y"))
-    val s4 = Scope("scope1", // Creating a new scope named scope1
+    val s4 = dsl.Scope("scope1", // Creating a new scope named scope1
       // The scope constructor takes a variable number of arguments which are the commands
       // to execute in that scope
       Assign("x", Value("outer x")),
-      Scope("scope2",
+      dsl.Scope("scope2",
         Assign("x", Value("inner x")),
         Insert("A", Variable("x")),
         Insert("A", Variable("y"))
@@ -282,6 +349,185 @@ object Main {
     assert(evaluator.Check("A", Value("inner x")))
     assert(evaluator.Check("A", Value("outermost y")))
   }
+}
+```
+
+# Using Classes
+
+## Example 1
+We can define a class as follows:
+```scala
+import dsl.{Constructor, DefineClass, Field, Assign, This, Value, Method, Return, AccessModifiers}
+
+dsl.DefineClass("Student",
+  Field("name"),
+  Field("uin", AccessModifiers.PRIVATE),
+  Constructor(
+    Assign(This("name"), Value("")),
+    Assign(This("uin"), Value(123456789))
+  ),
+  Method("getUin",
+    Return(This("uin"))
+  )
+)
+```
+This equivalent code in Java would be:
+```java
+class Student {
+    public String name;
+    private int uin;
+    Student() {
+        this.name = "";
+        this.uin = 123456789;
+    }
+    public int getUin() {
+        return this.uin;
+    }
+}
+```
+
+## Example 2 - `extends` and inheritance
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+val finalState = evaluator.run(
+  DefineClass("Point",
+    Field("x"),
+    Field("y"),
+    Constructor(
+      Assign(This("x"), Value(0)),
+      Assign(This("y"), Value(0)),
+    ),
+    Method("setX",
+      Assign(This("x"), Variable("x"))
+    )
+  ),
+  DefineClass("3DPoint",
+    Extends("Point"), // add an extends clause to extend Point
+    Field("z"),
+    Constructor(
+      Assign(This("z"), Value(0)),
+    ),
+    Method("setZ",
+      Assign(This("z"), Variable("z"))
+    )
+  ),
+  
+  // Create a new 3DPoint p1
+  Assign(Variable("p1"), NewObject("3DPoint")),
+  // p1.setX(50)
+  dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", Value(50))),
+  // p1.setZ(60)
+  dsl.InvokeMethod(Variable("_"), "p1", "setZ", Parameter("z", Value(60)))
+)
+```
+The equivalent Java code:
+```java
+class Point {
+    public int x;
+    public int y;
+    Point() {
+        this.x = 0;
+        this.y = 0;
+    }
+    public void setX(int x) {
+        this.x = x;
+    }
+}
+class _3DPoint extends Point {
+    public int z;
+    _3DPoint() {
+        this.z = 0;
+    }
+    public void setZ(int z) {
+        this.z = z;
+    }
+}
+public class Main {
+    public static void main(String [] args) {
+        _3DPoint p1 = new _3DPoint();
+        p1.setX(50);
+        p1.setZ(60);
+    }
+}
+
+```
+
+## Example 3
+```scala
+import dsl._
+val evaluator = new Evaluator()
+val finalState = evaluator.run(
+  DefineClass("Car",
+    Field("name"),
+    Constructor(
+      Assign(This("name"), Value("Honda"))
+    ),
+    Method("setName",
+      Assign(This("name"), Variable("name"))
+    ),
+    Method("getName",
+      Return(This("name"))
+    ),
+    //define a nested class
+    NestedClass("Engine",
+      Field("engine"),
+      Constructor(
+        Assign(This("engine"), Value("V8"))
+      ),
+      Method("setEngine",
+        Assign(This("engine"), Variable("engineName"))
+      ),
+      Method("getCarName",
+        // Access the outer class variable
+        Return(This("name", "Car"))
+      ),
+    ),
+  ),
+
+  Assign(Variable("car"), NewObject("Car")),
+  dsl.InvokeMethod(Variable("_"), "car", "setName", Parameter("name", Value("Ford"))),
+  Assign(Variable("engine"), NewObject("Engine", "car")),
+  dsl.InvokeMethod(Variable("carName"), "engine", "getCarName")
+)
+```
+Equivalent Java code:
+```java
+class Car {
+    public String name;
+    Car() {
+        this.name = "Honda";
+    }
+    public void setName(name) {
+        this.name = name;
+    }
+    public String getName() {
+        return this.name;
+    }
+    //define a nested class
+    class Engine {
+        public String engine;
+        Engine() {
+            this.engine = "V8";
+        }
+        public void setEngine(String engine) {
+            this.engine = engine;
+        }
+        public String getCarName() {
+            // access the outer class variable
+            return this.Car.name;
+        }
+    }
+}
+
+public class Main {
+    public static void main(String args[]) {
+        Car car = new Car();
+        car.setName("Ford");
+        Car.Engine engine = new Car.Engine();
+        String carName = engine.getCarName();
+    }
 }
 ```
 
@@ -379,7 +625,7 @@ It also keeps track of its parent class and outer class if they exist
 
 A sample `ClassDefinition` (formatted in JSON for better readability)
 
-```json
+```json5
 {
   "name": "Person",
   // name of the class
@@ -440,7 +686,7 @@ which class this object belongs to.
 
 A sample `dsl.Object` (formatted in JSON for better readability)
 
-```json
+```json5
 {
   "className": "Person",
   
@@ -487,6 +733,11 @@ The class `ScopeRecord` also has a separate field `thisVal` for storing `this`.
 The `evaluate()` and `execute()` functions check for the value of `this`
 in the current scope record and use it accordingly. If `this` is not present, it throws an error.
 
+
+## Nested Classes
+
+Nested classes have been implemented by storing a reference to the outer class object of 
+an inner object for every `dsl.Object`. This field is `null` this object is not an object of an inner class.
 
 # Limitations of the Implementation
 - **A command cannot be used in a macro.**

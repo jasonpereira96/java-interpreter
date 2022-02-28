@@ -556,7 +556,7 @@ Ensure that `sbt` is installed.
 
 Clone the repo using:
 ```
-git clone https://github.com/jasonpereira96/CS-474-Assignment-1
+git clone https://github.com/jasonpereira96/CS-474-Assignment-2
 ```
 
 

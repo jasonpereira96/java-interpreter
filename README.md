@@ -1,7 +1,7 @@
-# Homework 2 Report - Jason Pereira (676827009)
+# Homework 3 Report - Jason Pereira (676827009)
 
 ## Index
-- [Commands](https://github.com/jasonpereira96/CS-474-Assignment-1#commands)
+- [Commands](#commands)
 - [Expressions](https://github.com/jasonpereira96/CS-474-Assignment-1#expressions)
 - [Helper Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#helper-classes)
 - [AccessModifiers](https://github.com/jasonpereira96/CS-474-Assignment-2#accessmodifiers)

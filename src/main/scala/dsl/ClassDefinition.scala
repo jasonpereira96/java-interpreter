@@ -9,8 +9,12 @@ abstract class ClassDefinitionOption
 case class Constructor(commands: Command*) extends ClassDefinitionOption
 //case class Field(fieldName: String) extends ClassDefinitionOption
 case class Field(fieldName: String, accessModifier: AccessModifiers = PUBLIC) extends ClassDefinitionOption
+case class TypedField(typeName: String, fieldName: String, accessModifier: AccessModifiers = PUBLIC) extends ClassDefinitionOption
 case class Method(name: String, commands: Command*) extends ClassDefinitionOption
+case class AbstractMethod(name: String) extends ClassDefinitionOption
 case class Extends(name: String) extends ClassDefinitionOption
+case class Implements(interfaceName: String) extends ClassDefinitionOption
+case class isAbstract(isAbstract: Boolean) extends ClassDefinitionOption
 case class NestedClass(className: String, options: ClassDefinitionOption *) extends ClassDefinitionOption
 
 class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
@@ -19,7 +23,10 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
   private val constructor = mutable.ListBuffer.empty[Command]
   private val parentClass = mutable.Set.empty[String]
   private val outerClass = mutable.Set.empty[String]
+  private val metadata = mutable.Map.empty[String, Any]
+  private val implementedInterfaces = mutable.Set.empty[String]
 
+  metadata.addOne(Constants.isAbstract, false)
 
   for (option <- options) {
     option match {
@@ -32,7 +39,15 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
       case Field(name: String, accessModifier: AccessModifiers) => {
         this.fields.addOne(name, new Field_(name, null, accessModifier))
       }
+      case TypedField(typeName: String, name: String, accessModifier: AccessModifiers) => {
+        val f = new Field_(name, null, accessModifier)
+        this.fields.addOne(name, f)
+        f.setType(typeName)
+      }
 
+      case isAbstract(isAbstract) => {
+        metadata(Constants.isAbstract) = isAbstract
+      }
 
       // handling this outside for now
       // case Extends(name: String) => {
@@ -41,8 +56,14 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
       case Extends(name) => {
         // just here to placate a match error since we're handling extends outside
       }
+      case Implements(name) => {
+        this.implementedInterfaces.addOne(name)
+      }
       case NestedClass(name, options @ _*) => {
         // just here to placate a match error since we're handling nested class outside
+      }
+      case AbstractMethod(name) => {
+        this.methods.addOne(name, new MethodDefinition(name, List.empty[Command],true))
       }
     }
   }
@@ -99,4 +120,16 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
     }
     return this.outerClass.toList.head
   }
+
+  def isAbstract(): Boolean = {
+    assert(this.metadata(Constants.isAbstract).isInstanceOf[Boolean])
+    this.metadata(Constants.isAbstract).asInstanceOf[Boolean]
+  }
+  def isConcrete(): Boolean = !this.isAbstract()
+
+  def getMethods(): mutable.Map[String, MethodDefinition] =  this.methods
+  
+  def implementsInterface(name: String) = this.implementedInterfaces.contains(name)
+  
+  def getImplementedInterfaces: mutable.Set[String] = this.implementedInterfaces
 }

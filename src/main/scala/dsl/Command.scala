@@ -7,6 +7,7 @@ case class Parameter(parameterName: String, value: Expression)
  */
 abstract class Command
 case class Assign(variable: Any, exp: Expression) extends Command
+case class TypedAssign(className: String, variable: Any, exp: Expression) extends Command
 case class Insert(ident: String, expressions: Expression*) extends Command
 case class Delete(ident: String, expressions: Expression*) extends Command
 case class CreateNewSet(name: String) extends Command
@@ -16,6 +17,7 @@ case class DefineMacro(name: String, expression: Expression) extends Command
 case class Display(message: String, identifier: String) extends Command
 //case class NewObject(referenceName: String, className: String, arguments: (String, Any)*) extends Command
 case class DefineClass(className: String, options: ClassDefinitionOption *) extends Command
+case class DefineInterface(interfaceName: String, options: InterfaceDefinitionOption *) extends Command
 case class InvokeMethod(returnee: Variable, objectName: String, methodName: String, params: Parameter*) extends Command
 case class Return(exp: Expression) extends Command
 case class Print(message: Any) extends Command

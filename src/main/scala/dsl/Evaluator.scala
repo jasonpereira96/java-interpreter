@@ -17,6 +17,7 @@ class Evaluator {
   private val SCOPE_NAME = "__SCOPE_NAME__"
   private val stack = mutable.Stack[ScopeRecord]()
   private val classTable = mutable.Map.empty[String, ClassDefinition]
+  private val interfaceTable = mutable.Map.empty[String, InterfaceDefinition]
   this.stack.push(new ScopeRecord())
 
   /**
@@ -114,6 +115,7 @@ class Evaluator {
     for (command: Command <- program.commands) {
       execute(command)
     }
+    Util.runChecks(this.classTable, this.interfaceTable)
     stack.top.getState().toMap
   }
 
@@ -124,7 +126,6 @@ class Evaluator {
    */
   def run(commands: Command*): immutable.Map[String, Value] = {
     this.runProgram(new Program(commands.toList))
-    stack.top.getState().toMap
   }
 
   /**
@@ -393,6 +394,9 @@ class Evaluator {
         for (sr <- this.stack) {
           println(sr)
         }
+      case DefineInterface(interfaceName, options @ _*) =>
+        this.processInterfaceDef(command.asInstanceOf[DefineInterface])
+//        Util.runChecks(this.classTable, this.interfaceTable)
     }
   }
   @tailrec
@@ -455,6 +459,10 @@ class Evaluator {
     assert(this.classTable.contains(className))
     val classDef = getClassDef(className)
     val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
+
+    if (classDef.isAbstract()) {
+      throw new Exception(s"class $className is abstract; cannot be instantiated")
+    }
 
     if (parentClassName != null) {
       val parentClassDef = getClassDef(parentClassName)
@@ -586,7 +594,7 @@ class Evaluator {
         case Extends(parentClassName) =>
           // check whether the parent class actually exists
           if (!this.classTable.contains(parentClassName)) {
-            throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
+//            throw new Exception(s"Parent class of the extends clause $parentClassName not defined")
           }
           // set the name of the parent class given in the extends clause
           classDefinition.setParentClass(parentClassName)
@@ -597,6 +605,44 @@ class Evaluator {
     }
     //        val newState = this.getState() + (name -> Value(classDefinition))
     //        this.setState(newState)
+  }
+
+  private def processInterfaceDef(di: dsl.DefineInterface) : Unit = {
+    val options = di.options
+    val name = di.interfaceName
+
+    // check for multiple inheritance
+    if (options.count(option => option.isInstanceOf[ExtendsInterface]) > 1) {
+      throw new Exception(s"Two or more extends clauses found. Multiple inheritance is not allowed.")
+    }
+
+    // need to check for class already defined
+    if (this.interfaceTable.contains(name)) {
+      throw new Exception(s"interface $name is already defined")
+    }
+
+    val interfaceDefinition = new InterfaceDefinition(name, options: _*)
+
+//    if (outerClassName != null) {
+//      classDefinition.setOuterClass(outerClassName)
+//    }
+
+    this.interfaceTable(name) = interfaceDefinition // adding here is a little dangerous
+
+    // check for single inheritance
+    for (o: InterfaceDefinitionOption <- options) {
+      o match {
+        case ExtendsInterface(parentInterfaceName) =>
+          // check whether the parent interface actually exists
+          if (!this.interfaceTable.contains(parentInterfaceName)) {
+//            throw new Exception(s"Parent interface of the extends clause $parentInterfaceName not defined")
+          }
+          // set the name of the parent interface given in the extends clause
+          interfaceDefinition.setParentInterface(parentInterfaceName)
+
+        case _ =>
+      }
+    }
   }
 
 

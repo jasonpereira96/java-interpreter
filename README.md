@@ -7,6 +7,7 @@
 - [AccessModifiers](#accessmodifiers)
 - [Examples on using the language](#examples-on-using-my-language)
 - [Using Classes](#using-classes)
+- [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
 - [Limitations of the implementation](#limitations-of-the-implementation)

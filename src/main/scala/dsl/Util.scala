@@ -46,7 +46,7 @@ object Util {
 
 
     if (hasCycle(adjacencyList.toMap)) {
-      print("Found a cycle!!!!!!!!!!!")
+      assertp(false, "Cyclic inheritance between classes found")
     }
 
     val adjacencyList2 = mutable.Map.empty[String, mutable.ListBuffer[String]]
@@ -61,7 +61,7 @@ object Util {
 
 
     if (hasCycle(adjacencyList2.toMap)) {
-      print("Found a cycle!!!!!!!!!!!")
+      assertp(false, "Cyclic inheritance between interfaces found")
     }
   }
   private def canFinish(numCourses: Int, prerequisites: Array[Array[Int]]): Boolean = {
@@ -114,8 +114,8 @@ object Util {
   def runChecks(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
     checkDefs(classTable, interfaceTable)
     checkAbstractClasses(classTable)
-    checkImplements(classTable, interfaceTable)
     checkForCycles(classTable, interfaceTable)
+    checkImplements(classTable, interfaceTable)
   }
   private def checkImplements(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
     for ((className, cd) <- classTable) {
@@ -124,7 +124,7 @@ object Util {
 
       // gather all the methods into one set
       while (currentClassName != null) {
-        val cd = classTable(className)
+        val cd = classTable(currentClassName)
         allMethods.addAll(cd.getMethods().keys)
         currentClassName = if (cd.hasParentClass()) cd.getParentClassName() else null
       }
@@ -149,7 +149,10 @@ object Util {
       if (cd.isConcrete()) {
          assertp(abstractMethodsCount == 0, s"class $className is not abstract. It cannot have any abstract methods")
       }
-      // if the class is concrete and its immediate parent is abstract, then it needs to immplement all the
+      if (cd.isAbstract()) {
+        assertp(abstractMethodsCount > 0, s"class $className is abstract. It should have at least one abstract method")
+      }
+      // if the class is concrete and its immediate parent is abstract, then it needs to implement all the
       // non-implemented abstract members
       if (cd.isConcrete() && cd.hasParentClass() && classTable(cd.getParentClassName()).isAbstract()) {
         doAbstractCheck(classTable, className)
@@ -195,10 +198,10 @@ object Util {
         }
       }
     }
-    for ((className, cd) <- interfaceTable) {
-      if (cd.hasParentInterface()) {
-        if(!classTable.contains(cd.getParentInterface())) {
-          val message = s"interface ${cd.getParentInterface()} present in the extends clause of $className is not defined"
+    for ((interfaceName, id) <- interfaceTable) {
+      if (id.hasParentInterface()) {
+        if(!interfaceTable.contains(id.getParentInterface())) {
+          val message = s"interface ${id.getParentInterface()} present in the extends clause of $interfaceName is not defined"
           println(message)
           assert(false, message)
         }

@@ -1,4 +1,4 @@
-import dsl.{Print, _}
+import dsl.{InvokeMethod, Method, Print, *}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -7,48 +7,24 @@ class Test09_TypesAndPolymorphism extends AnyFlatSpec with Matchers {
 
   it should "create a class and use it" in {
     val evaluator = new Evaluator()
-
-    val finalState = evaluator.run(
-      DefineClass("Point",
-        Field("x"),
-        Field("y"),
-        isAbstract(true),
-        Constructor(
-          Assign(This("x"), Value(0)),
-          Assign(This("y"), Value(0)),
+    assertThrows[Throwable] {
+      val finalState = evaluator.run(
+        DefineClass("Point",
+          Field("x"),
+          Field("y"),
+          isAbstract(true),
+          Constructor(
+            Assign(This("x"), Value(0)),
+            Assign(This("y"), Value(0)),
+          ),
+          Method("setX",
+            Assign(This("x"), Variable("x"))
+          )
         ),
-        Method("setX",
-          Assign(This("x"), Variable("x"))
-        )
-      ),
-
-      Assign(Variable("p1"), NewObject("Point")),
-      dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", Value(50)))
-    )
-
-    assert(finalState.contains("p1"))
-    val p1 = finalState("p1")
-
-    p1 match {
-      case dsl.Value(v) => {
-        v match {
-          case o: dsl.Object => {
-            assert(o.getClassName == "Point")
-            assert(o.getField("x") == Value(50))
-            assertThrows[Exception] {
-              o.getField("x1") == Value(50)
-            }
-          }
-          case _ => {
-            assert(false)
-          }
-        }
-      }
-      case _ => {
-        assert(false)
+        Assign(Variable("p1"), NewObject("Point")),
+      )
       }
     }
-  }
 
   it should "fail for cyclic inheritance" in {
     val evaluator = new Evaluator()
@@ -61,12 +37,14 @@ class Test09_TypesAndPolymorphism extends AnyFlatSpec with Matchers {
   }
   it should "fail for cyclic inheritance for classes" in {
     val evaluator = new Evaluator()
-    val finalState = evaluator.run(
-      DefineClass("A1", Extends("A4")),
-      DefineClass("A2", Extends("A1")),
-      DefineClass("A3", Extends("A2")),
-      DefineClass("A4", Extends("A3"))
-    )
+    assertThrows[Throwable] {
+      val finalState = evaluator.run(
+        DefineClass("A1", Extends("A4")),
+        DefineClass("A2", Extends("A1")),
+        DefineClass("A3", Extends("A2")),
+        DefineClass("A4", Extends("A3"))
+      )
+    }
   }
   it should "test for class not defined" in {
     val evaluator = new Evaluator()
@@ -102,6 +80,25 @@ class Test09_TypesAndPolymorphism extends AnyFlatSpec with Matchers {
           isAbstract(true),
         ),
         Assign(Variable("a"), NewObject("A"))
+      )
+    }
+  }
+  it should "not allow objects of interfaces to be instantiated" in {
+    val evaluator = new Evaluator()
+    assertThrows[Throwable] {
+      evaluator.run(
+        DefineInterface("I"),
+        Assign(Variable("a"), NewObject("I"))
+      )
+    }
+  }
+  it should "enforce that an abstract class must contain at least one abstract method" in {
+    assertThrows[Throwable] {
+      val evaluator = new Evaluator()
+      evaluator.run(
+        DefineClass("Shape",
+          isAbstract(true)
+        )
       )
     }
   }
@@ -186,15 +183,101 @@ class Test09_TypesAndPolymorphism extends AnyFlatSpec with Matchers {
     }
   }
 
-  it should "test non abstract classes having abstract methods" in {
+  it should "test the use of interface fields" in {
     val evaluator = new Evaluator()
-    evaluator.run(
+    // The interface Car contains a field hp which is set to 700. Interface fields are implicitly final
+    val finalState = evaluator.run(
+      DefineInterface("Car",
+        InterfaceField("hp", Value(700))
+      ),
+      DefineClass("Honda",
+        Implements("Car"),
+        Method("getHp",
+          Return(This("hp"))
+        )
+      ),
+      Assign(Variable("honda"), NewObject("Honda")),
+      InvokeMethod(Variable("hp"), "honda", "getHp")
+    )
+    assert(finalState("hp") == Value(700))
+  }
+  it should "test the use of interface fields 2" in {
+    val evaluator = new Evaluator()
+    // The interface Car contains a field hp which is set to 700. Interface fields are implicitly final
+    // Car has both fields hp and engine, since it extends Vehicle
+    val finalState = evaluator.run(
+      DefineInterface("Vehicle",
+        InterfaceField("engine", Value("MD500"))
+      ),
+      DefineInterface("Car",
+        ExtendsInterface("Vehicle"),
+        InterfaceField("hp", Value(700))
+      ),
+      DefineClass("Honda",
+        Implements("Car"),
+        Method("getHp",
+          Return(This("hp"))
+        ),
+        Method("getEngine",
+          Return(This("engine"))
+        )
+      ),
+      Assign(Variable("honda"), NewObject("Honda")),
+      InvokeMethod(Variable("hp"), "honda", "getHp"),
+      InvokeMethod(Variable("engine"), "honda", "getEngine")
+    )
+    assert(finalState("hp") == Value(700))
+    assert(finalState("engine") == Value("MD500"))
+  }
+  it should "test that if a concrete derived class inherits from an abstract class then all abstract methods of the parent classes must be implemented in the derived class" in {
+    val evaluator = new Evaluator()
+    // Since Square is concrete but it extends the abstract class Shape and doesn't implement the abstract method getName(),
+    // this code throws and error
+    assertThrows[Throwable] {
+      evaluator.run(
+        DefineClass("Shape",
+          isAbstract(true),
+          AbstractMethod("getName")
+        ),
+        DefineClass("Square",
+          Extends("Shape"),
+          Field("side")
+        )
+      )
+    }
+
+    // Since Square is concrete and it extends the abstract class Shape and implements the
+    // abstract method getName() as well, this code compiles correctly
+    val evaluator2 = new Evaluator()
+    evaluator2.run(
       DefineClass("Shape",
         isAbstract(true),
-        AbstractMethod("getArea")
+        AbstractMethod("getName")
       ),
       DefineClass("Square",
         Extends("Shape"),
+        Field("side"),
+        Constructor(
+          Assign(This("side"), Value(1))
+        ),
+        Method("getName",
+          Return(Value("Square"))
+        )
+      )
+    )
+
+    // Square extends Shape, but in this case both are abstract, so Square does not need to implement all
+    // the abstract methods
+    val evaluator3 = new Evaluator()
+    evaluator3.run(
+      DefineClass("Shape",
+        isAbstract(true),
+        AbstractMethod("getName")
+      ),
+      DefineClass("Square",
+        isAbstract(true),
+        Extends("Shape"),
+        AbstractMethod("m"),
         Field("side")
       )
     )

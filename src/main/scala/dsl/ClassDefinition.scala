@@ -37,10 +37,10 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
         this.methods.addOne(name, new MethodDefinition(name, commands.toList))
       }
       case Field(name: String, accessModifier: AccessModifiers) => {
-        this.fields.addOne(name, new Field_(name, null, accessModifier))
+        this.fields.addOne(name, new Field_(name, null, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier)))
       }
       case TypedField(typeName: String, name: String, accessModifier: AccessModifiers) => {
-        val f = new Field_(name, null, accessModifier)
+        val f = new Field_(name, null, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier))
         this.fields.addOne(name, f)
         f.setType(typeName)
       }
@@ -128,8 +128,8 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
   def isConcrete(): Boolean = !this.isAbstract()
 
   def getMethods(): mutable.Map[String, MethodDefinition] =  this.methods
-  
+
   def implementsInterface(name: String) = this.implementedInterfaces.contains(name)
-  
+
   def getImplementedInterfaces: mutable.Set[String] = this.implementedInterfaces
 }

@@ -114,8 +114,9 @@ class Evaluator {
     this.stack.push(new ScopeRecord())
     for (command: Command <- program.commands) {
       execute(command)
+      Util.runChecks(this.classTable, this.interfaceTable)
     }
-    Util.runChecks(this.classTable, this.interfaceTable)
+
     stack.top.getState().toMap
   }
 
@@ -444,7 +445,7 @@ class Evaluator {
   }
 
   private def getClassDef(className: String): ClassDefinition = {
-    assert(this.classTable.contains(className))
+    Util.assertp(this.classTable.contains(className), s"class $className is not defined")
     this.classTable(className)
   }
 
@@ -455,8 +456,24 @@ class Evaluator {
     None
   }
 
+  private def getInterfaceFields(className: String): List[Field_] = {
+    val cd = this.classTable(className)
+    val result = mutable.ListBuffer.empty[dsl.Field_]
+    for (iName <- cd.getImplementedInterfaces) {
+      var ci = iName
+      while (ci != null) {
+        val interfaceDef = interfaceTable(ci)
+        for ((fieldName, fieldValue) <- interfaceDef.getFields) {
+          val fi = new Field_(fieldName, fieldValue, immutable.Map(Constants.ACCESS_MODIFIER -> AccessModifiers.PUBLIC, Constants.FINAL -> true))
+          result.addOne(fi)
+        }
+        ci = if (interfaceDef.hasParentInterface()) interfaceDef.getParentInterface() else null
+      }
+    }
+    result.toList
+  }
+
   private def createObject(className: String, outerClassObjectName: String): dsl.Object = {
-    assert(this.classTable.contains(className))
     val classDef = getClassDef(className)
     val parentClassName = if (classDef.hasParentClass()) classDef.getParentClassName() else null
 
@@ -466,14 +483,14 @@ class Evaluator {
 
     if (parentClassName != null) {
       val parentClassDef = getClassDef(parentClassName)
-      val o = new Object(className,
-        classDef.getFieldInfo() ++ parentClassDef.getFieldInfo() :_*)
+      val o = new dsl.Object(className,
+        getInterfaceFields(className) ++ classDef.getFieldInfo() ++ parentClassDef.getFieldInfo() :_*)
       // invoking all the constructors to initialize the object
       invokeAllConstructors(o, className)
       setOuterObject(o, outerClassObjectName)
       o
     } else {
-      val o = new dsl.Object(className, classDef.getFieldInfo() :_*)
+      val o = new dsl.Object(className, getInterfaceFields(className) ++ classDef.getFieldInfo() :_*)
       setOuterObject(o, outerClassObjectName)
       invokeAllConstructors(o, className)
       o
@@ -507,6 +524,9 @@ class Evaluator {
     val objectClassName = cd.getName
 
     if (hasField(cd, fieldName)) {
+      if (currentObject.hasField(fieldName) && currentObject.isFieldFinal(fieldName)) {
+        return true
+      }
       val classNameOption = getClassNameOfField(fieldName, currentObject.getClassName)
       classNameOption match {
         case Some(fieldClassName) =>
@@ -537,8 +557,20 @@ class Evaluator {
     if (cd.hasParentClass()) {
       cd.hasField(fieldName) || hasField(getClassDef(cd.getParentClassName()), fieldName)
     } else {
-      cd.hasField(fieldName)
+      hasInterfaceField(cd, fieldName) || cd.hasField(fieldName)
     }
+  }
+  private def hasInterfaceField(cd: ClassDefinition, fieldName: String): Boolean = {
+    for (iName <- cd.getImplementedInterfaces) {
+      var curInterfaceName = iName
+      while (curInterfaceName != null) {
+        if (interfaceTable(curInterfaceName).getFields.contains(fieldName)) {
+          return true
+        }
+        curInterfaceName = if (interfaceTable(curInterfaceName).hasParentInterface()) interfaceTable(curInterfaceName).getParentInterface() else null
+      }
+    }
+    false
   }
 
   private def hasParentClass(className: String) : Boolean = {
@@ -558,7 +590,7 @@ class Evaluator {
   private def invokeConstructor(o: dsl.Object, className: String): Unit = {
     val classDef = getClassDef(className)
     pushStackFrame(s"Constructor call of ${classDef.getName}", thisVal = o)
-    println(s"Constructor call of $className")
+//    println(s"Constructor call of $className")
     // this is dangerous and may have deadly side effects :'(
     for (c <- classDef.getConstructor) {
       execute(c)

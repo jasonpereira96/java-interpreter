@@ -2,7 +2,7 @@ package dsl
 
 import dsl.AccessModifiers.AccessModifiers
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 class Object(val className: String, val fields: dsl.Field_ *) {
 //class Object(val className: String, val fields: (String, AccessModifiers, Value)*) {
@@ -13,13 +13,18 @@ class Object(val className: String, val fields: dsl.Field_ *) {
     val fieldName: String = field.getName
     val accessModifier = field.getAccessModifier
     val fieldValue = field.getValue
-    this.fieldMap.addOne(fieldName, new Field_(fieldName, fieldValue, accessModifier))
+    val isFinal = field.isFinal()
+    this.fieldMap.addOne(fieldName, new Field_(fieldName, fieldValue, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier,
+      Constants.FINAL -> isFinal)))
   }
 
   def setField(name: String, value: Value): Unit = {
     if (hasField(name)) {
       val accessModifier = this.fieldMap(name).getAccessModifier
-      this.fieldMap(name) = new Field_(name, value, accessModifier)
+      if (this.fieldMap(name).isFinal()) {
+        throw new Exception(s"Field $name is final. It cannot be changed")
+      }
+      this.fieldMap(name) = new Field_(name, value, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier))
     } else {
       throw new Exception(s"object does not have field $name")
     }
@@ -29,6 +34,8 @@ class Object(val className: String, val fields: dsl.Field_ *) {
   def hasField(fieldName: String): Boolean = {
     this.fieldMap.contains(fieldName)
   }
+
+  def isFieldFinal(fieldName: String): Boolean = fieldMap(fieldName).isFinal()
 
   def getField(name: String): Value = {
     if (hasField(name)) {

@@ -19,15 +19,7 @@ into commands and expressions.
 ### Commands
 A command represents an operating that you can perform in my language.
 The following is the list of commands defined.
-```
-dsl.Assign(ident: String, exp: dsl.Expression)
-dsl.Insert(setName: String, exps: dsl.Expression*)
-dsl.Delete(setName: String, exps: dsl.Expression*)
-dsl.CreateNewSet(name: String)
-dsl.Scope(name: String, commands: dsl.Command*)
-dsl.DefineMacro(name: String, expression: dsl.Expression)
-dsl.Display(message: String, identifier: String)
-```
+
 
 ### `dsl.Assign(ident: String, exp: dsl.Expression)`
 Evaluates expression `exp` and assigns it to a new variable named
@@ -64,6 +56,10 @@ specified by `identifier`.
 
 ### `dsl.DefineClass(className: String, options: ClassDefinitionOption *`
 Defines a class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
+Refer to the Using Classes section.
+
+### `dsl.DefineInterface(intrefaceName: String, options: InterfaceDefinitionOption *`
+Defines an interface named `intrefaceName`. Specify the properties of the class using options. Refer `InterfaceDefinitionOption` below and examples.
 Refer to the Using Classes section.
 
 ### `dsl.NestedClass(className: String, options: ClassDefinitionOption *`
@@ -170,6 +166,9 @@ The default access modifier is `PUBLIC`
 ### `Method(name: String, commands: Command*)`
 Adds a method to the class. Takes as params the commands that make up the body of the method.
 
+### `AbstractMethod(name: String)`
+Adds an abstract method to the class. 
+
 ### `Extends(name: String)` 
 Adds an extends clause to the class. `name` is the name of the class to extend.
 Equivalent to Java's construct 
@@ -178,6 +177,28 @@ class Student extends Person {
     // ...
 }
 ```
+
+### `Implements(name: String)`
+Adds an `implements` clause to the class. `name` is the name of the interface to implement. 
+You can have multiple implements clauses.
+Equivalent to Java's construct
+```java
+class Car implements Vehicle {
+    // ...
+}
+```
+
+### `isAbstract(isAbstract: Boolean)`
+if the parameter is specified as `true`, then the class is declared as
+`abstract`. An abstract class cannot be instansiated and must contain
+at least one abstract method.
+Equivalent to Java's construct
+```java
+abstract class Car {
+    // ...
+}
+```
+
 
 ### `NestedClass(className: String, options: ClassDefinitionOption *)`
 Adds an nested class inside the class. `className` is the name of the nested class.
@@ -188,6 +209,26 @@ class A {
     class B {
         int y;
     }
+}
+```
+
+##  `InterfaceDefinitionOption`
+These are the options that you can pass to a interface definition to add properties to the interface.
+Refer the classes example for usage.
+
+
+### `InterfaceField(fieldName: String, value: dsl.Value)`
+Adds a field to the interface. Takes as params the field name. Interface fields are implicitly public and final.
+
+### `InterfaceMethod(name: String)`
+Adds a method to the interface. Interface methods are abstract so they do not need a body. 
+
+### `Extends(name: String)`
+Adds an extends clause to the interface. `name` is the name of the interface to extend.
+Equivalent to Java's construct
+```java
+interface Student extends Person {
+    // ...
 }
 ```
 
@@ -546,6 +587,8 @@ public class MyClass {
 }
 ```
 
+# Using Abstract Classes and Interfaces
+
 **Refer to the [test cases](https://github.com/jasonpereira96/CS-474-Assignment-2/tree/master/src/test/scala) for more extensive examples.**
 
 # Installing and running
@@ -753,6 +796,24 @@ in the current scope record and use it accordingly. If `this` is not present, it
 
 Nested classes have been implemented by storing a reference to the outer class object of 
 an inner object for every `dsl.Object`. This field is `null` this object is not an object of an inner class.
+
+## Abstract Classes
+Declaring a class as `abstract` implies that it cannot be instansiated and that it must contain 
+atleast one abstract method. You can later implement the abstract methods in derived classes using the
+`AbstractMethod` construct. Internally, there is a boolean flag `isAbstract` that stores whether the class is abstract or not.
+The code then does the necessary checks so that the requirements for abstract classes are met.
+
+
+## Interfaces
+Interfaces are represented internally as objects of type `InterfaceDefinition`. In the `Evaluator` class,
+there is a `Map` of interface name to interface definitions. 
+
+## Resolving Cyclic dependencies
+In order to check for cycles within inheritance chains, I build a graph of all the classes in the program.
+Each class is represented as a node in the graph. If class A extends class B, then I add a directed edge between A and B.
+By employed the DFS cycle detection algorithm, I detect if there is any cyclic dependency between the inheritance chains.
+A similar approach is followed for interface extends chains.
+
 
 # Limitations of the Implementation
 - **A command cannot be used in a macro.**

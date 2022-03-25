@@ -3,16 +3,29 @@ package dsl
 import dsl.AccessModifiers.AccessModifiers
 
 import scala.collection.mutable
+import scala.collection.immutable
 
-class Field_(val name: String, val value: Value = null, val accessModifier: AccessModifiers = AccessModifiers.PUBLIC) {
+class Field_(val name: String, val value: Value = null, val options: immutable.Map[String, Any] = immutable.Map.empty[String, Any]) {
 
   private val metadata = mutable.Map.empty[String, Any]
 
   metadata("fieldType") = null
+  metadata(Constants.FINAL) = false
+
+  for ((k, v) <- options) {
+    k match {
+      case Constants.ACCESS_MODIFIER => {
+        metadata(Constants.ACCESS_MODIFIER) = options(Constants.ACCESS_MODIFIER)
+      }
+      case Constants.FINAL => {
+        metadata(Constants.FINAL) = options(Constants.FINAL)
+      }
+    }
+  }
 
   def getValue: Value = value
 
-  def getAccessModifier: AccessModifiers = accessModifier
+  def getAccessModifier: AccessModifiers = metadata(Constants.ACCESS_MODIFIER).asInstanceOf[AccessModifiers]
 
   def getName: String = name
 
@@ -37,4 +50,6 @@ class Field_(val name: String, val value: Value = null, val accessModifier: Acce
     }
     return None
   }
+
+  def isFinal(): Boolean = metadata(Constants.FINAL).asInstanceOf[Boolean]
 }

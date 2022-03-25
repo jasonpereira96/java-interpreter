@@ -590,7 +590,7 @@ public class MyClass {
 
 # Using Abstract Classes and Interfaces
 
-**Refer to the [test cases](test/scala) for more extensive examples.**
+**Refer to the [test cases](src/test/scala) for more extensive examples.**
 
 # Installing and running
 ## Steps:

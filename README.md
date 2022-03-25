@@ -2,15 +2,15 @@
 
 ## Index
 - [Commands](#commands)
-- [Expressions](https://github.com/jasonpereira96/CS-474-Assignment-1#expressions)
-- [Helper Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#helper-classes)
-- [AccessModifiers](https://github.com/jasonpereira96/CS-474-Assignment-2#accessmodifiers)
-- [Examples on using the language](https://github.com/jasonpereira96/CS-474-Assignment-1#examples-on-using-my-language)
-- [Using Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#using-classes)
-- [Installing and Running](https://github.com/jasonpereira96/CS-474-Assignment-1#installing-and-running)
-- [Implementation Details](https://github.com/jasonpereira96/CS-474-Assignment-1#implementation-details)
-- [Limitations of the implementation](https://github.com/jasonpereira96/CS-474-Assignment-1#limitations-of-the-implementation)
-- [`Evaluator`](https://github.com/jasonpereira96/CS-474-Assignment-1#evaluator)
+- [Expressions](#expressions)
+- [Helper Classes](#helper-classes)
+- [AccessModifiers](#accessmodifiers)
+- [Examples on using the language](#examples-on-using-my-language)
+- [Using Classes](#using-classes)
+- [Installing and Running](#installing-and-running)
+- [Implementation Details](#implementation-details)
+- [Limitations of the implementation](#limitations-of-the-implementation)
+- [`Evaluator`](#evaluator)
 
 ## Constructs defined
 I define the following constructs for my language. They are divided
@@ -589,7 +589,7 @@ public class MyClass {
 
 # Using Abstract Classes and Interfaces
 
-**Refer to the [test cases](https://github.com/jasonpereira96/CS-474-Assignment-2/tree/master/src/test/scala) for more extensive examples.**
+**Refer to the [test cases](test/scala) for more extensive examples.**
 
 # Installing and running
 ## Steps:
@@ -814,6 +814,25 @@ Each class is represented as a node in the graph. If class A extends class B, th
 By employed the DFS cycle detection algorithm, I detect if there is any cyclic dependency between the inheritance chains.
 A similar approach is followed for interface extends chains.
 
+Consider the class hierarchy shown below. class B extends A. class R extends
+Q and class Q extends P. We build a graph with one node for each class
+and look for cycles. Since no cycles are found, this class hierarchy
+is okay.
+
+![Cyclic dependency resolution](src/img/c1.png)
+
+Consider the class hierarchy shown below. 
+- class A extends B
+- class B extends C
+- class C extends D
+- class D extends A
+
+Since there is a cycle in this graph, we have found a cyclic dependency
+in the inheritance chain.
+
+![Cyclic dependency resolution](src/img/c2.png)
+
+A similar approach is followed for interfaces as well.
 
 # Limitations of the Implementation
 - **A command cannot be used in a macro.**

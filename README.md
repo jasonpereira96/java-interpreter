@@ -591,6 +591,125 @@ public class MyClass {
 
 # Using Abstract Classes and Interfaces
 
+## Interfaces example
+```scala
+import dsl._
+val evaluator = new Evaluator()
+evaluator.run(
+  DefineInterface("Bicycle",
+    InterfaceMethod("applyBrakes"),
+    InterfaceMethod("speedUp")
+  ),
+  DefineClass("BMX",
+    Implements("Bicycle"),
+    Method("applyBrakes",
+      Print("applying brakes")
+    ),
+    Method("speedUp",
+      Print("speeding up")
+    )
+  )
+)
+```
+
+Equivalent Java code:
+
+```java
+interface Bicycle {
+    void applyBrakes();
+
+    void speedUp();
+}
+
+class BMX implements Bicycle {
+    @Override
+    public void applyBrakes() {
+        System.out.println("applying brakes");
+    }
+
+    @Override
+    public void speedUp() {
+        System.out.println("speeding up");
+    }
+}
+```
+
+## Interfaces example 2
+```scala
+import dsl._ 
+val evaluator = new Evaluator()
+// The interface Car contains a field hp which is set to 700. Interface fields are implicitly final
+val finalState = evaluator.run(
+  DefineInterface("Car",
+    InterfaceField("hp", Value(700))
+  ),
+  DefineClass("Honda",
+    Implements("Car"),
+    Method("getHp",
+      Return(This("hp"))
+    )
+  ),
+  Assign(Variable("honda"), NewObject("Honda")),
+  InvokeMethod(Variable("hp"), "honda", "getHp")
+)
+assert(finalState("hp") == Value(700))
+```
+
+Equivalent Java code:
+```java
+interface Car {
+    int hp = 700;
+}
+class Honda implements Car {
+    int getHp() {
+        return this.hp;
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+        Honda honda = new Honda();
+        int hp = honda.getHp();
+        assert(hp == 700); 
+    }
+}
+```
+## Abstract Class example
+```scala
+import dsl._
+val evaluator2 = new Evaluator()
+evaluator2.run(
+  DefineClass("Shape",
+    isAbstract(true),
+    AbstractMethod("getName")
+  ),
+  DefineClass("Square",
+    Extends("Shape"),
+    Field("side"),
+    Constructor(
+      Assign(This("side"), Value(1))
+    ),
+    Method("getName",
+      Return(Value("Square"))
+    )
+  )
+)
+```
+
+Java code:
+```java
+abstract class Shape {
+    abstract String getName();
+}
+class Square extends Shape {
+    int side;
+    Square() {
+        this.side = 1;
+    }
+    String getName() {
+        return "Square";
+    }
+}
+```
 **Refer to the [test cases](src/test/scala) for more extensive examples.**
 
 # Installing and running
@@ -859,13 +978,13 @@ Yes. If an abstract class is implementing an interface, the method body for the 
 **Can an abstract class implement interfaces?**  
 Yes. If an abstract class is implementing an interface, the method body for the implemented methods is not required.
 
-**Can a class implement two or more interfaces that have methods whose signatures differ only in return types?**
+**Can a class implement two or more interfaces that have methods whose signatures differ only in return types?**  
 Yes. Different return types means they are different methods.
 
-**Can an abstract class inherit from a concrete class?**
+**Can an abstract class inherit from a concrete class?**  
 Yes. There is no restriction that prevents an abstract class from extending a concrete class.
 
-**Can an abstract class/interface be instantiated as anonymous concrete classes?**
+**Can an abstract class/interface be instantiated as anonymous concrete classes?**  
 Anonymous classes are not supported in my language.
 
 # Limitations of the Implementation

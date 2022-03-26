@@ -17,21 +17,18 @@ class InterfaceDefinition(val name: String, val options: InterfaceDefinitionOpti
 
   for (option <- options) {
     option match {
-      case InterfaceMethod(name: String) => {
+      case InterfaceMethod(name: String) =>
         this.methods.addOne(name, new MethodDefinition(name, List()))
-      }
-      case ExtendsInterface(name_) => {
+      case ExtendsInterface(name_) =>
         // just here to placate a match error since we're handling extends outside
         println(s"$name extends interface $name_")
-      }
-      case InterfaceField(name: String, value: dsl.Value) => {
+      case InterfaceField(name: String, value: dsl.Value) =>
         fieldsMap(name) = value
-      }
     }
   }
   
   def hasParentInterface(): Boolean = {
-     !this.parentInterface.isEmpty
+     this.parentInterface.nonEmpty
   }
   def setParentInterface(name: String): Unit = {
     this.parentInterface.addOne(name)

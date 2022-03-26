@@ -56,15 +56,15 @@ further computation.
 Prints out a custom message followed by the contents of the variable
 specified by `identifier`.
 
-### `dsl.DefineClass(className: String, options: ClassDefinitionOption *`
+### `dsl.DefineClass(className: String, options: ClassDefinitionOption *)`
 Defines a class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
 Refer to the Using Classes section.
 
-### `dsl.DefineInterface(intrefaceName: String, options: InterfaceDefinitionOption *`
+### `dsl.DefineInterface(intrefaceName: String, options: InterfaceDefinitionOption *)`
 Defines an interface named `intrefaceName`. Specify the properties of the class using options. Refer `InterfaceDefinitionOption` below and examples.
 Refer to the Using Classes section.
 
-### `dsl.NestedClass(className: String, options: ClassDefinitionOption *`
+### `dsl.NestedClass(className: String, options: ClassDefinitionOption *)`
 Defines a nested class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
 Refer to the Using Classes section.
 

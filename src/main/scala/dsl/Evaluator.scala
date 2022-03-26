@@ -36,7 +36,7 @@ class Evaluator {
 
   /**
    * Pushes a new Map on the stack. Called when entering a new scope.
-   * @oaram name The name of the scope to be created
+   * @param name The name of the scope to be created
    */
   private def pushStackFrame(name: String = UNNAMED, state: mutable.Map[String, Value] = mutable.Map.empty[String, Value], thisVal: dsl.Object = null): Unit = {
     if (thisVal == null) {

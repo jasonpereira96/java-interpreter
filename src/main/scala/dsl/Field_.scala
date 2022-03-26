@@ -14,12 +14,10 @@ class Field_(val name: String, val value: Value = null, val options: immutable.M
 
   for ((k, v) <- options) {
     k match {
-      case Constants.ACCESS_MODIFIER => {
+      case Constants.ACCESS_MODIFIER =>
         metadata(Constants.ACCESS_MODIFIER) = options(Constants.ACCESS_MODIFIER)
-      }
-      case Constants.FINAL => {
+      case Constants.FINAL =>
         metadata(Constants.FINAL) = options(Constants.FINAL)
-      }
     }
   }
 
@@ -36,7 +34,7 @@ class Field_(val name: String, val value: Value = null, val options: immutable.M
     Some(value)
   }
 
-  def setType(fieldType: String) = {
+  def setType(fieldType: String): Unit = {
     metadata("fieldType") = fieldType
   }
 
@@ -48,7 +46,7 @@ class Field_(val name: String, val value: Value = null, val options: immutable.M
     if (hasType()) {
       return Some(metadata("fieldType").asInstanceOf[String])
     }
-    return None
+    None
   }
 
   def isFinal(): Boolean = metadata(Constants.FINAL).asInstanceOf[Boolean]

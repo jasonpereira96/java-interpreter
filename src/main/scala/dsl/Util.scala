@@ -4,20 +4,19 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object Util {
-  def assertp(assertion: Boolean, message: String = "") = {
+  def assertp(assertion: Boolean, message: String = ""): Unit = {
     try {
       assert(assertion, message)
     } catch {
-      case e: Throwable => {
+      case e: Throwable =>
         println(message)
         throw e
-      }
     }
   }
 
   private def hasCycle(graph: Map[String, ListBuffer[String]]): Boolean = {
     val N = graph.keySet.size
-    var prereq = ListBuffer.empty[Array[Int]]
+    val prereq = ListBuffer.empty[Array[Int]]
     val idMapping = mutable.Map.empty[String, Integer]
     var  i = 0
     for ((className, list: mutable.ListBuffer[String]) <- graph) {
@@ -30,10 +29,10 @@ object Util {
       }
     }
 //    println(prereq)
-    return !canFinish(N, prereq.toArray)
+    !canFinish(N, prereq.toArray)
   }
 
-  private def checkForCycles(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
+  private def checkForCycles(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]): Unit = {
     val adjacencyList = mutable.Map.empty[String, mutable.ListBuffer[String]]
     for ((className, cd) <- classTable) {
       adjacencyList(className) = mutable.ListBuffer.empty[String]
@@ -71,7 +70,7 @@ object Util {
     val BLACK = "BLACK"
     val GREY = "GREY"
 
-    for ( i <- 0 to numCourses -1) {
+    for ( i <- 0 until numCourses) {
       graph(i) = ListBuffer.empty[Int]
       visited(i) = WHITE
     }
@@ -84,7 +83,7 @@ object Util {
     var hasCycle = false
 
 
-    for (id <- 0 to numCourses - 1) {
+    for (id <- 0 until numCourses) {
       if (visited(id) == WHITE) {
         dfs(id)
       }
@@ -106,18 +105,18 @@ object Util {
       }
       visited(nodeId) = BLACK
     }
-    return !hasCycle
+    !hasCycle
   }
 
 
 
-  def runChecks(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
+  def runChecks(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]): Unit = {
     checkDefs(classTable, interfaceTable)
     checkAbstractClasses(classTable)
     checkForCycles(classTable, interfaceTable)
     checkImplements(classTable, interfaceTable)
   }
-  private def checkImplements(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
+  private def checkImplements(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]): Unit = {
     for ((className, cd) <- classTable) {
       val allMethods = mutable.Set.empty[String]
       var currentClassName = className
@@ -135,15 +134,15 @@ object Util {
         for ((mName, md) <- interfaceTable(iName).getMethods) {
           // check if that method is present somewhere along the inheritance chain
           if (!allMethods.contains(mName)) {
-            assertp(false, s"class ${className} must implement method ${mName}")
+            assertp(false, s"class $className must implement method $mName")
           }
         }
       }
     }
   }
-  private def checkAbstractClasses(classTable: mutable.Map[String, ClassDefinition]) = {
+  private def checkAbstractClasses(classTable: mutable.Map[String, ClassDefinition]): Unit = {
     for ((className, cd) <- classTable) {
-      val abstractMethodsCount = cd.getMethods().values.filter((v: MethodDefinition) => v.isAbstract).size
+      val abstractMethodsCount = cd.getMethods().values.count((v: MethodDefinition) => v.isAbstract)
 //      println(cd.getName)
 //      println(abstractMethodsCount)
       if (cd.isConcrete()) {
@@ -160,7 +159,7 @@ object Util {
     }
   }
 
-  private def doAbstractCheck(classTable: mutable.Map[String, ClassDefinition], className: String) = {
+  private def doAbstractCheck(classTable: mutable.Map[String, ClassDefinition], className: String): Unit = {
     val stack = mutable.Stack.empty[String]
     val set = mutable.Set.empty[String]
 
@@ -176,7 +175,7 @@ object Util {
     }
 //    println(stack)
     // now check if all the abstract methods are implemented
-    while (!stack.isEmpty) {
+    while (stack.nonEmpty) {
       val className = stack.pop()
       // add all abstract methods
       set.addAll(classTable(className).getMethods().values.filter(md => md.isAbstract).map(md => md.name))
@@ -185,10 +184,10 @@ object Util {
         set.remove(cn)
       })
     }
-    assertp(set.size == 0, "Some abstract method is not implemented")
+    assertp(set.isEmpty, "Some abstract method is not implemented")
   }
 
-  private def checkDefs(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]) = {
+  private def checkDefs(classTable: mutable.Map[String, ClassDefinition], interfaceTable: mutable.Map[String, InterfaceDefinition]): Unit = {
     for ((className, cd) <- classTable) {
       if (cd.hasParentClass()) {
         if(!classTable.contains(cd.getParentClassName())) {
@@ -210,7 +209,7 @@ object Util {
   }
 
   @main
-  private def testRunChecks() = {
+  private def testRunChecks(): Unit = {
     val ct = mutable.Map.empty[String, ClassDefinition]
     val it = mutable.Map.empty[String, InterfaceDefinition]
 

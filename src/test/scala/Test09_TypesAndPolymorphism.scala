@@ -122,6 +122,60 @@ class Test09_TypesAndPolymorphism extends AnyFlatSpec with Matchers {
       )
     )
   }
+  it should "test that a class cannot inherit from itself" in {
+    val evaluator = new Evaluator()
+    assertThrows[Throwable] {
+      evaluator.run(
+        DefineClass("A",
+          Extends("A")
+        )
+      )
+    }
+  }
+  it should "test that a class can implement two or more different interfaces that declare methods with exactly the same signatures" in {
+    val evaluator = new Evaluator()
+    evaluator.run(
+      DefineInterface("I1",
+        InterfaceMethod("m")
+      ),
+      DefineInterface("I2",
+        InterfaceMethod("m")
+      ),
+      DefineClass("A",
+        Implements("I1"),
+        Implements("I2"),
+        Method("m",
+          Print("hello")
+        )
+      )
+    )
+  }
+  it should "test that an abstract class can implement interfaces" in {
+    val evaluator = new Evaluator()
+    evaluator.run(
+      DefineInterface("I1",
+        InterfaceMethod("m")
+      ),
+      DefineClass("A",
+        isAbstract(true),
+        Implements("I1"),
+        AbstractMethod("m"),
+      )
+    )
+  }
+  it should "test that an abstract class can inherit from a concrete class" in {
+    val evaluator = new Evaluator()
+    evaluator.run(
+      DefineClass("A",
+        Method("m")
+      ),
+      DefineClass("B",
+        isAbstract(true),
+        Extends("A"),
+        AbstractMethod("n"),
+      )
+    )
+  }
   it should "test if derived classes implement abstract methods 2" in {
     val evaluator = new Evaluator()
     assertThrows[Throwable] {

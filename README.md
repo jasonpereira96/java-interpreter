@@ -10,6 +10,7 @@
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
+- [Assignment Questions](#assignment-questions)
 - [Limitations of the implementation](#limitations-of-the-implementation)
 - [`Evaluator`](#evaluator)
 
@@ -834,6 +835,38 @@ in the inheritance chain.
 ![Cyclic dependency resolution](src/img/c2.png)
 
 A similar approach is followed for interfaces as well.
+
+# Assignment Questions
+**Can a class/interface inherit from itself?**  
+No. The cycle detection algorithm will detect a cycle in the inheritance chain and
+print out an error message.
+
+**Can an interface inherit from an abstract class with all pure methods?**  
+No. An interface can only inherit from an interface. Interfaces and classes are 2 separate constructs. Classes
+can inherit from (concrete or abstract) classes and interfaces can inherit from interfaces.
+
+**Can an interface implement another interface?**  
+No. Only a class can implement an interface. One interface implementing another interface does not
+make sense because all methods in an interface are abstract anyway.
+
+
+**Can a class implement two or more different interfaces that declare methods with exactly the same signatures?**  
+Yes. Since the interfaces are unrelated, one method in the class will count for 2 separate implementation requirements.
+
+**Can an abstract class inherit from another abstract class and implement interfaces where all interfaces and the abstract class have methods with the same signatures?**  
+Yes. If an abstract class is implementing an interface, the method body for the implemented methods is not required.
+
+**Can an abstract class implement interfaces?**  
+Yes. If an abstract class is implementing an interface, the method body for the implemented methods is not required.
+
+**Can a class implement two or more interfaces that have methods whose signatures differ only in return types?**
+Yes. Different return types means they are different methods.
+
+**Can an abstract class inherit from a concrete class?**
+Yes. There is no restriction that prevents an abstract class from extending a concrete class.
+
+**Can an abstract class/interface be instantiated as anonymous concrete classes?**
+Anonymous classes are not supported in my language.
 
 # Limitations of the Implementation
 - **A command cannot be used in a macro.**

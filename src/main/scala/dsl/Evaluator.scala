@@ -2,6 +2,7 @@ package dsl
 
 import scala.collection.{immutable, mutable}
 import dsl.Constants.*
+import sun.security.ec.point.ProjectivePoint.Immutable
 
 import scala.annotation.tailrec
 import scala.collection.mutable.Map
@@ -398,6 +399,27 @@ class Evaluator {
       case DefineInterface(interfaceName, options @ _*) =>
         this.processInterfaceDef(command.asInstanceOf[DefineInterface])
 //        Util.runChecks(this.classTable, this.interfaceTable)
+
+      case If(expression: Expression, commands @ _*) =>
+        val evaluatedExp = evaluate(expression)
+        if (Util.isTruthy(evaluatedExp)) {
+          runCommands(commands.toList)
+        }
+      case IfElse(expression: Expression, ifStatements: List[Command], elseStatements: List[Command]) =>
+        val evaluatedExp = evaluate(expression)
+        if (Util.isTruthy(evaluatedExp)) {
+          runCommands(ifStatements)
+        } else {
+          runCommands(elseStatements)
+        }
+      case Assert(v: Boolean) => 
+        assert(v)
+    }
+  }
+  
+  private def runCommands(commands: List[Command]) = {
+    for (c: Command <- commands) {
+      this.execute(c)
     }
   }
   @tailrec

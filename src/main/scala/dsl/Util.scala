@@ -207,6 +207,15 @@ object Util {
       }
     }
   }
+  
+  def isTruthy(value: Value): Boolean = {
+    value.value match {
+      case v: Boolean => v
+      case v: String => !v.isEmpty
+      case v: Integer => v != 0
+      case _ => true
+    }
+  }
 
   @main
   private def testRunChecks(): Unit = {

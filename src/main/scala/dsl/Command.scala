@@ -17,8 +17,10 @@ case class DefineMacro(name: String, expression: Expression) extends Command
 case class If(expression: Expression, commands: Command*) extends Command
 case class IfElse(expression: Expression, ifStatements: List[Command], elseStatements: List[Command]) extends Command
 case class ExceptionClassDef(className: String, reason: String) extends Command
+case class Try(commands: List[Command], catchBlocks: CatchBlock*) extends Command
+case class CatchBlock(className: String, commands: Command*) extends Command
 case class Throw(className: String) extends Command
-case class Catch(className: String) extends Command
+//case class Catch(className: String) extends Command
 case class Display(message: String, identifier: String) extends Command
 //case class NewObject(referenceName: String, className: String, arguments: (String, Any)*) extends Command
 case class DefineClass(className: String, options: ClassDefinitionOption *) extends Command
@@ -27,4 +29,6 @@ case class InvokeMethod(returnee: Variable, objectName: String, methodName: Stri
 case class Return(exp: Expression) extends Command
 case class Print(message: Any) extends Command
 case class PrintStack() extends Command
+case class Assert(value: Boolean) extends Command
 
+// References: https://docs.python.org/3/library/ast.html#ast.If

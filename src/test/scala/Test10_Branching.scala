@@ -82,5 +82,31 @@ class Test10_Branching extends AnyFlatSpec with Matchers {
       )
     )
   }
+  it should "test an if else ladder" in {
+    val evaluator = new Evaluator()
+
+    evaluator.run(
+      // setting a = 4
+      Assign(Variable("a"), Value(4)),
+      IfElse(EqualTo(Variable("a"), Value(1)), ifStatements=List[Command](
+        Print("a is 1"), Assert(false)), elseStatements=List[Command](
+        IfElse(EqualTo(Variable("a"), Value(2)), ifStatements=List[Command](
+          Print("a is 2"), Assert(false)), elseStatements=List[Command](
+          IfElse(EqualTo(Variable("a"), Value(3)), ifStatements=List[Command](
+            Print("a is 3"), Assert(false)), elseStatements=List[Command](
+            IfElse(EqualTo(Variable("a"), Value(4)), ifStatements=List[Command](
+              Print("a is 4"), Assert(true)), elseStatements=List[Command](
+              IfElse(EqualTo(Variable("a"), Value(5)), ifStatements=List[Command](
+                Print("a is 5"), Assert(false)), elseStatements=List[Command](
+                Print("in the else clause"),
+                Assert(false)
+              ))
+            ))
+          ))
+        ))
+      ))
+    )
+  }
 }
+
 

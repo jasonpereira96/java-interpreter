@@ -248,7 +248,8 @@ class Evaluator {
 
         val o = createObject(className, outerClassObjectName)
         Value(o)
-
+      case EqualTo(exp1: Expression, exp2: Expression) =>
+        Value(evaluate(exp1) == evaluate(exp2))
       case _ =>
         Value(99)
     }

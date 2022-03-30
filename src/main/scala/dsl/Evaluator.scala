@@ -425,8 +425,10 @@ class Evaluator {
             if(!runCatchBlocks(e, catchBlocks)) { // no matching catch block is found
               this.execute(Throw(e.className, e.reason)) // re-throw the exception
             }
-            this.execute(finallyBlock)
-          }
+            
+          } 
+        } finally {
+          this.execute(finallyBlock)
         }
       }
 

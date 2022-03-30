@@ -19,6 +19,7 @@ class Evaluator {
   private val stack = mutable.Stack[ScopeRecord]()
   private val classTable = mutable.Map.empty[String, ClassDefinition]
   private val interfaceTable = mutable.Map.empty[String, InterfaceDefinition]
+  private val exceptionClassTable = mutable.Map.empty[String, String]
   this.stack.push(new ScopeRecord())
 
   /**
@@ -413,16 +414,54 @@ class Evaluator {
         } else {
           runCommands(elseStatements)
         }
-      case Assert(v: Boolean) => 
+      case ExceptionClassDef(className: String) =>
+        this.exceptionClassTable(className) = className
+
+      case Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock) => {
+        try {
+          runCommands(commands)
+        } catch {
+          case e: InternalException => {
+            if(!runCatchBlocks(e, catchBlocks)) { // no matching catch block is found
+              this.execute(Throw(e.className, e.reason)) // re-throw the exception
+            }
+            this.execute(finallyBlock)
+          }
+        }
+      }
+
+      case Throw(className: String, reason) =>
+        if (this.exceptionClassTable.contains(className)) {
+          throw InternalException(className, reason = reason)
+        } else {
+          throw Exception(s"Exception class $className is not defined")
+        }
+
+      case CatchBlock(className: String, commands  @ _*) =>
+        this.runCommands(commands.toList)
+
+      case FinallyBlock(commands  @ _*) =>
+        this.runCommands(commands.toList)
+      case Assert(v: Boolean) =>
         assert(v)
     }
   }
-  
+  private def runCatchBlocks(e: InternalException, catchBlocks: List[CatchBlock]): Boolean = {
+    for (catchBlock: CatchBlock <- catchBlocks) {
+      if (matchesCatchBlock(catchBlock, e.className)) {
+        runCommands(catchBlock.commands.toList)
+        return true
+      }
+    }
+    false
+  }
   private def runCommands(commands: List[Command]) = {
     for (c: Command <- commands) {
       this.execute(c)
     }
   }
+
+  private def matchesCatchBlock(cb: CatchBlock, className: String): Boolean = (cb.className == ANY) || (cb.className == className)
   @tailrec
   private def lookupMethod(className: String, methodName: String): Option[MethodDefinition] = {
     val cd = getClassDef(className)
@@ -720,3 +759,6 @@ class Evaluator {
     getOuterObject_(currentObject.getOuterObject(), outerClassName)
   }
 }
+
+
+final case class InternalException(className: String, reason: String = "") extends Exception

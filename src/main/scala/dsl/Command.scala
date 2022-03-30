@@ -1,5 +1,7 @@
 package dsl
 
+import scala.util.control.Exception.Finally
+
 
 case class Parameter(parameterName: String, value: Expression)
 /**
@@ -16,10 +18,11 @@ case class NamedScope(name: String, commands: Command*) extends Command
 case class DefineMacro(name: String, expression: Expression) extends Command
 case class If(expression: Expression, commands: Command*) extends Command
 case class IfElse(expression: Expression, ifStatements: List[Command], elseStatements: List[Command]) extends Command
-case class ExceptionClassDef(className: String, reason: String) extends Command
-case class Try(commands: List[Command], catchBlocks: CatchBlock*) extends Command
+case class ExceptionClassDef(className: String) extends Command
+case class Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock: FinallyBlock = Constants.DEFAULT_FINALLY_BLOCK) extends Command
 case class CatchBlock(className: String, commands: Command*) extends Command
-case class Throw(className: String) extends Command
+case class FinallyBlock(commands: Command*) extends Command
+case class Throw(className: String, reason: String = "") extends Command
 //case class Catch(className: String) extends Command
 case class Display(message: String, identifier: String) extends Command
 //case class NewObject(referenceName: String, className: String, arguments: (String, Any)*) extends Command

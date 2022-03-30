@@ -6,4 +6,6 @@ object Constants {
   val isAbstract = "isAbstract"
   val ACCESS_MODIFIER = "ACCESS_MODIFIER"
   val FINAL = "FINAL"
+  val ANY = "ANY"
+  val DEFAULT_FINALLY_BLOCK = FinallyBlock()
 }

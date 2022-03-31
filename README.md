@@ -91,6 +91,65 @@ if (condition) {
 }
 ```
 
+
+### `ExceptionClassDef(className: String)`
+Define an exception class that can throw later.
+
+Equivalent to Java's:
+```java
+class MyCustomException extends Exception {
+    
+}
+```
+
+
+### `Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock: FinallyBlock = Constants.DEFAULT_FINALLY_BLOCK)`
+A try, catch, finally block for handling exceptions. If an exception is caught, the catch blocks will try to match the exception class name
+in the order specified.
+Refer to the examples for details.
+
+Equivalent Java construct:
+```java
+try {
+    // commands
+} catch (ExceptionType1 e) {
+    // statements    
+} catch (ExceptionType2 e) {
+    // statements    
+} catch (ExceptionType3 e) {
+    // statements    
+} finally {
+    // statements
+}
+```
+### `case class CatchBlock(className: String, commands: Command*)`
+Defines a `catch` block to be used within a `try/catch/finally` construct.
+If `Constants.ANY` is specified for the `className` parameter, 
+It will work as a catch block without a type of exception to catch.
+Should be used last in the list.
+```java
+catch {
+    // statements    
+}
+```
+Equivalent Java construct:
+```java
+catch (Exception e) {
+    
+} 
+```
+
+### `FinallyBlock(commands: Command*)`
+Similar to the `catch` block, it is a `finally` block.
+
+### `Throw(className: String, reason: String = "")`
+Equivalent to the `throw` statement in Java. Used to throw an exception.
+
+Equivalent Java construct:
+```java
+throw new Exception("something went wrong")
+```
+
 ### `dsl.NestedClass(className: String, options: ClassDefinitionOption *)`
 Defines a nested class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
 Refer to the Using Classes section.
@@ -176,6 +235,18 @@ outer class of an object inside a method.
 Similar to:
 ```java
 OuterClass.this.x
+```
+
+
+### `EqualTo(exp1: Expression, exp2: Expression)`
+Implements the `==` operator in most languages. It first evaluates `exp1` and
+`exp2` and then returns `true` if they are equal or `false` otherwise.
+
+Similar to Java's
+```java
+int a = 1;
+int b = 2 - 1;
+a == b // return true
 ```
 
 # Helper Classes

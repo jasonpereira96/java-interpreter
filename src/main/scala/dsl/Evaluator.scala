@@ -436,7 +436,7 @@ class Evaluator {
         if (this.exceptionClassTable.contains(className)) {
           throw InternalException(className, reason = reason)
         } else {
-          throw Exception(s"Exception class $className is not defined")
+          Util.assertp(false, s"Exception class $className is not defined")
         }
 
       case CatchBlock(className: String, commands  @ _*) =>

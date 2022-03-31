@@ -25,6 +25,69 @@ class Test11_TryCatch extends AnyFlatSpec with Matchers {
       )
     )
   }
+  it should "test try catch ladder" in {
+    val evaluator = new Evaluator()
+
+    evaluator.run(
+      ExceptionClassDef("E1"),
+      ExceptionClassDef("E2"),
+      ExceptionClassDef("E3"),
+      ExceptionClassDef("E4"),
+      ExceptionClassDef("E5"),
+      Try(
+        List[Command](
+          Throw("E5"),
+          Assert(false)
+        ),
+        List[CatchBlock](
+          CatchBlock("E1",
+            Print("E1 caught"),
+            Assert(false)
+          ),
+          CatchBlock("E2",
+            Print("E2 caught"),
+            Assert(false)
+          ),
+          CatchBlock("E3",
+            Print("E3 caught"),
+            Assert(false)
+          ),
+          CatchBlock("E4",
+            Print("E4 caught"),
+            Assert(false)
+          ),
+          CatchBlock("E5",
+            Print("E5 caught"),
+            Assert(true)
+          ),
+          CatchBlock(Constants.ANY,
+            Print("Exception caught"),
+            Assert(false)
+          ),
+        )
+      )
+    )
+  }
+  it should "fail when throwing an exception which is not defined" in {
+    val evaluator = new Evaluator()
+    assertThrows[Throwable] {
+      evaluator.run(
+        ExceptionClassDef("E1"),
+        Try(
+          List[Command](
+            Throw("E2"),
+            Assert(false)
+          ),
+          List[CatchBlock](
+            CatchBlock("E1",
+              Print("E1 caught"),
+              Assert(false)
+            ),
+          )
+        )
+      )
+    }
+  }
   it should "test nested try catch" in {
     val evaluator = new Evaluator()
 

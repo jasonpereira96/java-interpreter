@@ -1,4 +1,4 @@
-# Homework 3 Report - Jason Pereira (676827009)
+# Homework 4 Report - Jason Pereira (676827009)
 
 ## Index
 - [Commands](#commands)
@@ -8,6 +8,7 @@
 - [Examples on using the language](#examples-on-using-my-language)
 - [Using Classes](#using-classes)
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
+- [Truthy and Falsey values](#truthy-and-falsey-values)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
 - [Assignment Questions](#assignment-questions)
@@ -63,6 +64,32 @@ Refer to the Using Classes section.
 ### `dsl.DefineInterface(intrefaceName: String, options: InterfaceDefinitionOption *)`
 Defines an interface named `intrefaceName`. Specify the properties of the class using options. Refer `InterfaceDefinitionOption` below and examples.
 Refer to the Using Classes section.
+
+### `dsl.If(expression: Expression, commands: Command*)`
+Construct for branching based on a condition. All the `commands` are executed only if
+the `expression` evaluates to a Truthy value. (Follows Javascript's model for
+truthy and falsey values. Refer to the section about truthy and falsey values)
+
+Equivalent to Java's:
+```java
+if (condition) {
+    // commands    
+}
+```
+
+### `dsl.IfElse(expression: Expression, ifStatements: List[Command], elseStatements: List[Command])`
+Construct for branching based on a condition. All the `ifStatements` are executed only if
+the `expression` evaluates to a Truthy value. Otherwise, all the `elseStatements` are executed. (Follows Javascript's model for
+truthy and falsey values. Refer to the section about truthy and falsey values)
+
+Equivalent to Java's:
+```java
+if (condition) {
+    // ifStatements    
+} else {
+    // elseStatements
+}
+```
 
 ### `dsl.NestedClass(className: String, options: ClassDefinitionOption *)`
 Defines a nested class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
@@ -710,6 +737,16 @@ class Square extends Shape {
     }
 }
 ```
+
+# Truthy and Falsey Values
+
+In my language the values 0, `false` and "" are considered to be `false`
+when encountered in boolean context. All other values are considered to be `true`.
+
+
+Reference: https://developer.mozilla.org/en-US/docs/Glossary/Truthy
+
+
 **Refer to the [test cases](src/test/scala) for more extensive examples.**
 
 # Installing and running

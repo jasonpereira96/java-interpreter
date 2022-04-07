@@ -1,6 +1,7 @@
-import dsl._
+import dsl.*
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+
 import scala.collection.mutable.ListBuffer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -118,6 +119,35 @@ class Test11_TryCatch extends AnyFlatSpec with Matchers {
         )
       )
     )
+  }
+
+  it should "test the if inside try" in {
+    val evaluator = new Evaluator()
+
+    val finalState = evaluator.run(
+      ExceptionClassDef("E1"),
+      Try(
+        List[Command](
+          Assign(Variable("condition"), Value(false)),
+          Assign(Variable("c"), Value(0)),
+          IfElse(Variable("condition"),
+            List[Command](
+              Assign(Variable("c"), Value(10))
+            ),
+            List[Command](
+              Assign(Variable("c"), Value(20)),
+              Throw("E1")
+            )
+          )
+        ), List[CatchBlock](
+            CatchBlock(
+              Constants.ANY,
+              Assign(Variable("c"), Value(30))
+          )
+        )
+      )
+    )
+    assert(finalState("c") == Value(30))
   }
 }
 

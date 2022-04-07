@@ -17,6 +17,29 @@ class Test10_Branching extends AnyFlatSpec with Matchers {
       )
     )
   }
+  it should "test the if else expression (ternary operator)" in {
+    val evaluator = new Evaluator()
+
+    val finalState = evaluator.run(
+      Assign(Variable("condition"), Value(true)),
+      Assign(Variable("x"), IfElseExpression(Variable("condition"), Value(1), Value(2))),
+    )
+
+    assert(finalState("x") == Value(1))
+  }
+
+  it should "test the nested ternary operator" in {
+    val evaluator = new Evaluator()
+
+    val finalState = evaluator.run(
+      Assign(Variable("condition"), Value(true)),
+      Assign(Variable("x"), IfElseExpression(Value(false), Value(1),
+        IfElseExpression(Value(false), Value(2), Value(3)))),
+    )
+
+    assert(finalState("x") == Value(3))
+  }
+
   it should "test the if else construct" in {
     val evaluator = new Evaluator()
 

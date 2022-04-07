@@ -8,6 +8,7 @@
 - [Examples on using the language](#examples-on-using-my-language)
 - [Using Classes](#using-classes)
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
+- [Branching Constructs](#branching-constructs)
 - [Truthy and Falsey values](#truthy-and-falsey-values)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
@@ -122,7 +123,7 @@ try {
     // statements
 }
 ```
-### `case class CatchBlock(className: String, commands: Command*)`
+### `CatchBlock(className: String, commands: Command*)`
 Defines a `catch` block to be used within a `try/catch/finally` construct.
 If `Constants.ANY` is specified for the `className` parameter, 
 It will work as a catch block without a type of exception to catch.
@@ -808,6 +809,158 @@ class Square extends Shape {
     }
 }
 ```
+
+# Branching Constructs
+
+## `if` statement
+The `If` construct represents a single `if` statement
+
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  Assign(Variable("condition"), Value(true)),
+  If(Variable("condition"),
+    Print("condition is true")
+  )
+)
+```
+
+Equivalent Java code:
+```java
+class Main {
+     public static void main(String [] args) {
+         boolean condition = true;
+         if (condition) {
+             System.out.println("condition is true");
+         }
+     }
+}
+```
+
+## `if else` statement
+
+Note that the `if else` construct takes a `List[Command]` 
+and not individual commands one after another.
+
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  Assign(Variable("condition"), Value(true)),
+  IfElse(Variable("condition"), List[Command](
+    Print("condition is true")
+  ),
+    List[Command](
+      Print("condition is false"),
+      Assert(false) // code should never reach here
+    )
+  )
+)
+```
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        boolean condition = true;
+        if (condition) {
+            System.out.println("condition is true");
+        } else {
+            System.out.println("condition is false");
+            assert(false); 
+        }
+    }
+}
+```
+
+## `if else` ladder
+You can use the `if` and `if else` constructs to build an
+`if else` ladder.  
+Note: There is not seperate if else elseif construct. `else if`
+is implemented by nesting multiple `IfElse` constructs.
+
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  // setting a = 4
+  Assign(Variable("a"), Value(4)),
+  IfElse(EqualTo(Variable("a"), Value(1)), ifStatements=List[Command](
+    Print("a is 1"), Assert(false)), elseStatements=List[Command](
+    IfElse(EqualTo(Variable("a"), Value(2)), ifStatements=List[Command](
+      Print("a is 2"), Assert(false)), elseStatements=List[Command](
+      IfElse(EqualTo(Variable("a"), Value(3)), ifStatements=List[Command](
+        Print("a is 3"), Assert(false)), elseStatements=List[Command](
+        IfElse(EqualTo(Variable("a"), Value(4)), ifStatements=List[Command](
+          Print("a is 4"), Assert(true)), elseStatements=List[Command](
+          IfElse(EqualTo(Variable("a"), Value(5)), ifStatements=List[Command](
+            Print("a is 5"), Assert(false)), elseStatements=List[Command](
+            Print("in the else clause"),
+            Assert(false)
+          ))
+        ))
+      ))
+    ))
+  ))
+)
+```
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        int a = 4;
+        if (a == 1) {
+            System.out.println("a is 1");
+            assert(false); 
+        } else if (a == 2) {
+            System.out.println("a is 2");
+            assert(false);
+        } else if (a == 3) {
+            System.out.println("a is 3");
+            assert(false);
+        } else if (a == 4) {
+            System.out.println("a is 4");
+            assert(true);
+        } else {
+            System.out.println("a is 5");
+            System.out.println("in the else clause");
+            assert(false);
+        }
+    }
+}
+```
+## The ternary operator `condition ? exprIfTrue : exprIfFalse`
+
+The ternary operator in my language is called `IfElseExpression`.
+It works similarly to the ternary operator in Java.
+
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+val finalState = evaluator.run(
+  Assign(Variable("condition"), Value(true)),
+  Assign(Variable("x"), IfElseExpression(Variable("condition"), Value(1), Value(2))),
+)
+
+assert(finalState("x") == Value(1))
+```
+
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        boolean condition = true;
+        int x = condition ? 1 : 2;
+        assert(x == 1); 
+    }
+}
+```
+The ternary operator can also be nested. See test cases for
+more examples.
 
 # Truthy and Falsey Values
 

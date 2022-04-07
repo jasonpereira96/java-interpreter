@@ -251,6 +251,13 @@ class Evaluator {
         Value(o)
       case EqualTo(exp1: Expression, exp2: Expression) =>
         Value(evaluate(exp1) == evaluate(exp2))
+        
+      case IfElseExpression(exp, exprIfTrue, exprIfFalse) =>
+        if (Util.isTruthy(evaluate(exp))) {
+          evaluate(exprIfTrue)
+        } else {
+          evaluate(exprIfFalse)
+        }
       case _ =>
         Value(99)
     }

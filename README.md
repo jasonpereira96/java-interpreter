@@ -1339,6 +1339,33 @@ in the inheritance chain.
 
 A similar approach is followed for interfaces as well.
 
+## Exception Handling
+I have implemented a new class table only to store new exeception
+classes. They could have been stored in the original class table,
+but this was a design decision on my part. Internally, the try and catch
+constructs are implemented using Scala's try catch construct.
+If an exception is throw I do not proceed further but unwind the
+stack till I find a matching catch block, 
+else I rethrow the exception.
+
+## Branching
+I have implemented short-circuit evaluation for my if-else statements.
+This means that as soon as final result of the conditional expression is
+determined, I do not evaluate the rest of the clauses in the `if`
+
+Also, only one of the blocks in the `if-else` ladder is executed,
+depending on which condition clause is evaluated to `true`.
+
+To implement an `if/elseif/else` ladder, I have used nested `if-else`
+statements  as done in many languages and compilers.
+
+Reference:
+https://docs.python.org/3/library/ast.html#control-flow
+
+The ternary operator is implemented similarly.
+
+
+
 # Assignment Questions
 **Can a class/interface inherit from itself?**  
 No. The cycle detection algorithm will detect a cycle in the inheritance chain and

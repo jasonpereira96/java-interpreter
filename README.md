@@ -1089,7 +1089,15 @@ Refer to the test cases for more examples.
 
 # Truthy and Falsey Values
 
-In my language the values 0, `false` and "" are considered to be `false`
+Since there is no type-checker for my language, conditional expressions
+inside the `if` can evaluate to any type of value. This includes, boolean values,
+strings, numbers, etc...  
+Therefore, some values are considered truthy for the purposes for conditional
+expression evaluation and some are considered false. Many intepreteded languages
+like Javascript and Python also follow this model because they 
+do not have type checkers as well.
+
+In my language the values `0`, `false` and `""` are considered to be `false`
 when encountered in boolean context. All other values are considered to be `true`.
 
 

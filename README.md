@@ -1021,6 +1021,8 @@ class Main {
 
 **Another example:**
 
+
+Nested `try/catch`:
 ```scala
 import dsl._
 val evaluator = new Evaluator()
@@ -1347,6 +1349,9 @@ constructs are implemented using Scala's try catch construct.
 If an exception is throw I do not proceed further but unwind the
 stack till I find a matching catch block, 
 else I rethrow the exception.
+
+If there is no matching catch block until the topmost scope
+is reached, then an error message is printed on the console.
 
 ## Branching
 I have implemented short-circuit evaluation for my if-else statements.

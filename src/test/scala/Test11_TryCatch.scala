@@ -167,6 +167,26 @@ class Test11_TryCatch extends AnyFlatSpec with Matchers {
     )
     assert(finalState("c") == Value(30))
   }
+
+  it should "test throwing an exception with no matching catch block" in {
+    val evaluator = new Evaluator()
+
+    assertThrows[Throwable] {
+      val finalState = evaluator.run(
+        ExceptionClassDef("E1"),
+        ExceptionClassDef("E2"),
+        Try(
+          List[Command](
+            Throw("E1")
+          ), List[CatchBlock](
+            CatchBlock("E2",
+              Print("Caught E2")
+            )
+          )
+        )
+      )
+    }
+  }
 }
 
 

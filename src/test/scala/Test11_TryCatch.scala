@@ -26,6 +26,24 @@ class Test11_TryCatch extends AnyFlatSpec with Matchers {
       )
     )
   }
+  it should "test try catch and throw with a reason" in {
+    val evaluator = new Evaluator()
+
+    evaluator.run(
+      ExceptionClassDef("E"),
+      Try(
+        List[Command](
+          Throw("E", reason = "Some reason"),
+          Assert(false)
+        ),
+        List[CatchBlock](
+          CatchBlock("E",
+            Print("Exception caught")
+          )
+        )
+      )
+    )
+  }
   it should "test try catch ladder" in {
     val evaluator = new Evaluator()
 

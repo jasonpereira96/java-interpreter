@@ -9,6 +9,7 @@
 - [Using Classes](#using-classes)
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
 - [Branching Constructs](#branching-constructs)
+- [Exception Handling](#exception-handling)
 - [Truthy and Falsey values](#truthy-and-falsey-values)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
@@ -961,6 +962,128 @@ class Main {
 ```
 The ternary operator can also be nested. See test cases for
 more examples.
+
+# Exception Handling
+
+Just like Java, my language supports exception handling.
+
+To define a custom exception class, use the `ExceptionClassDef(className: String)` construct.
+
+You can then `throw` an exception of that type by using the
+`Throw` construct.
+
+If your code throws an exception it should be surrounded by
+a `Try` construct which includes a list of `Catch` blocks and 
+an optional `Finally` block.
+
+
+Consider this code:
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  ExceptionClassDef("E"), // define a new Exception class E
+  
+  // enclose any code that can throw an exception in a try block
+  Try(
+    List[Command](
+      Throw("E", reason="throwing E"), // throw the exception
+      Assert(false)
+    ),
+    List[CatchBlock]( // here is a list of catch blocks that can catch the exception
+      CatchBlock(Constants.ANY,
+        Print("Exception caught")
+      )
+    )
+  )
+)
+```
+
+Equivalent Java code:
+
+```java
+class E extends Exception {
+}
+
+class Main {
+    public static void main(String[] args) {
+        try {
+            throw new E("Throwing an exception");
+            assert(false); 
+        } catch (Exception e) {
+            System.out.println("Exception caught");
+        }
+    }
+}
+
+```
+
+**Another example:**
+
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  ExceptionClassDef("E1"),
+  ExceptionClassDef("E2"),
+  ExceptionClassDef("E3"),
+  Try(
+    List[Command](
+      Try(
+        List[Command](
+          Throw("E3")
+        ),
+        List[CatchBlock](
+          CatchBlock("E1", Print("Exception of type E1 caught"), Assert(false)),
+          CatchBlock("E2", Print("Exception of type E2 caught"), Assert(false)),
+        ),
+        FinallyBlock(
+          Print("finally 1 executed")
+        )
+      )
+    ),
+    List[CatchBlock](
+      CatchBlock("E3", Print("Exception of type E3 caught"), Assert(true)),
+    ),
+    FinallyBlock(
+      Print("finally 2 executed")
+    )
+  )
+)
+```
+
+Java code:
+```java
+class E1 extends Exception {}
+class E2 extends Exception {}
+class E3 extends Exception {}
+
+class Main {
+    public static void main(String[] args) {
+        try {
+            try {
+                throw new E3();
+            } catch (E1 e) {
+                System.out.println("Exception of type E1 caught");
+                assert(false);
+            } catch (E2 e) {
+                System.out.println("Exception of type E2 caught");
+                assert(false);
+            } finally {
+                System.out.println("finally 1 executed");
+            }
+        } catch (E3 e) {
+            System.out.println("Exception of type E3 caught");
+            assert(true); 
+        } finally {
+            System.out.println("finally 2 executed");
+        }
+    }
+}
+```
+Refer to the test cases for more examples.
 
 # Truthy and Falsey Values
 

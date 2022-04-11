@@ -435,6 +435,7 @@ class Evaluator {
             
           } 
         } finally {
+          // always execute the finally block
           this.execute(finallyBlock)
         }
       }
@@ -456,6 +457,8 @@ class Evaluator {
     }
   }
   private def runCatchBlocks(e: InternalException, catchBlocks: List[CatchBlock]): Boolean = {
+    // loop through the catch blocks and look for a matching catch block
+    // if one is found, then execute it and return
     for (catchBlock: CatchBlock <- catchBlocks) {
       if (matchesCatchBlock(catchBlock, e.className)) {
         runCommands(catchBlock.commands.toList)

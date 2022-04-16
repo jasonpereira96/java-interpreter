@@ -1,4 +1,4 @@
-# Homework 4 Report - Jason Pereira (676827009)
+# Homework 5 Report - Jason Pereira (676827009)
 
 ## Index
 - [Commands](#commands)
@@ -364,6 +364,7 @@ A `dsl.Program` is defined as a list of commands.
 
 ```scala
 // import the dsl package
+
 import dsl._
 
 object Main {
@@ -374,18 +375,18 @@ object Main {
 
     // Call evaluator.run and pass the commands to run as args
     evaluator.run(
-      Assign("i", Value(4)), // i = 4
+      Assign("i", EvaluatedType(4)), // i = 4
       CreateNewSet("A"), // Creating a new set A
-      Insert("A", Value(4), Value(5)), // A.insert(4, 5)
+      Insert("A", EvaluatedType(4), EvaluatedType(5)), // A.insert(4, 5)
       CreateNewSet("X"), // Creating a new set X
       CreateNewSet("Y"), // Creating a new set Y
-      Insert("X", Value(10), Value(20), Value(30)), // X.insert(10, 20, 30)
-      Insert("Y", Value(30), Value(40)), // Y.insert(30, 40)
+      Insert("X", EvaluatedType(10), EvaluatedType(20), EvaluatedType(30)), // X.insert(10, 20, 30)
+      Insert("Y", EvaluatedType(30), EvaluatedType(40)), // Y.insert(30, 40)
       Assign("X U Y", Union(Variable("X"), Variable("Y"))), // X U Y = the union of X and Y
       Assign("X - Y", Difference(Variable("X"), Variable("Y"))), // X - y = the difference between X and Y
       Assign("X intersect Y", Intersection(Variable("X"), Variable("Y"))), // X intersect Y = the intersection of X and Y
       Assign("X x Y", CartesianProduct(Variable("X"), Variable("Y"))), // X x Y = the cartesian product of X and Y
-      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), Value(300))), // Check whether Y contains 300
+      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), EvaluatedType(300))), // Check whether Y contains 300
       Display("i is", "i"), // Display the value of i
       Display("Contents of X", "X"), // Display the contents of X
       Display("Contents of Y", "Y"),
@@ -396,7 +397,7 @@ object Main {
     )
 
     // After evaluator.run() has finished, you can use Check() and CheckVariable() to verify the results
-    if (evaluator.Check("Y", Value(30))) {
+    if (evaluator.Check("Y", EvaluatedType(30))) {
       println("Y contains 300")
     }
   }
@@ -409,6 +410,7 @@ and pass it to the `runProgram()` method instead.
 
 ```scala
 // import the dsl package
+
 import dsl._
 
 object Main {
@@ -419,18 +421,18 @@ object Main {
 
     // Create a Program with a list of commands
     val program = new Program(List(
-      Assign("i", Value(4)), // i = 4
+      Assign("i", EvaluatedType(4)), // i = 4
       CreateNewSet("A"), // Creating a new set A
-      Insert("A", Value(4), Value(5)), // A.insert(4, 5)
+      Insert("A", EvaluatedType(4), EvaluatedType(5)), // A.insert(4, 5)
       CreateNewSet("X"), // Creating a new set X
       CreateNewSet("Y"), // Creating a new set Y
-      Insert("X", Value(10), Value(20), Value(30)), // X.insert(10, 20, 30)
-      Insert("Y", Value(30), Value(40)), // Y.insert(30, 40)
+      Insert("X", EvaluatedType(10), EvaluatedType(20), EvaluatedType(30)), // X.insert(10, 20, 30)
+      Insert("Y", EvaluatedType(30), EvaluatedType(40)), // Y.insert(30, 40)
       Assign("X U Y", Union(Variable("X"), Variable("Y"))), // X U Y = the union of X and Y
       Assign("X - Y", Difference(Variable("X"), Variable("Y"))), // X - y = the difference between X and Y
       Assign("X intersect Y", Intersection(Variable("X"), Variable("Y"))), // X intersect Y = the intersection of X and Y
       Assign("X x Y", CartesianProduct(Variable("X"), Variable("Y"))), // X x Y = the cartesian product of X and Y
-      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), Value(300))), // Check whether Y contains 300
+      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), EvaluatedType(300))), // Check whether Y contains 300
       Display("i is", "i"), // Display the value of i
       Display("Contents of X", "X"), // Display the contents of X
       Display("Contents of Y", "Y"),
@@ -439,12 +441,12 @@ object Main {
       Display("Contents of X intersect Y", "X intersect Y"),
       Display("Contents of X x Y", "X x Y")
     ))
-    
+
     // Run the program
     evaluator.runProgram(program)
 
     // After evaluator.run() has finished, you can use Check() and CheckVariable() to verify the results
-    if (evaluator.Check("Y", Value(30))) {
+    if (evaluator.Check("Y", EvaluatedType(30))) {
       println("Y contains 300")
     }
   }
@@ -452,49 +454,51 @@ object Main {
 ```
 
 ### Example with a Macro
+
 ```scala
 import dsl._
 
 object Main {
   def main(args: Array[String]): Unit = {
     val s1 = CreateNewSet("A")
-    val s2 = Insert("A", Value(1), Value(2), Value(3))
+    val s2 = Insert("A", EvaluatedType(1), EvaluatedType(2), EvaluatedType(3))
     val s3 = CreateNewSet("B")
-    val s4 = Insert("A", Value(4), Value(5))
+    val s4 = Insert("A", EvaluatedType(4), EvaluatedType(5))
     val s5 = DefineMacro("m", Union(Variable("A"), Variable("B"))) // Defining a new Macro named m
     val s6 = CreateNewSet("C")
-    val s7 = Insert("C", Value(6))
+    val s7 = Insert("C", EvaluatedType(6))
     val s8 = Assign("D", Union(Variable("m"), Variable("C"))) // Using the macro
     val p = new Program(List(s1, s2, s3, s4, s5, s6, s7, s8))
     val evaluator = new Evaluator()
     evaluator.runProgram(p)
 
-    assert(evaluator.Check("D", Value(1)))
-    assert(evaluator.Check("D", Value(2)))
-    assert(evaluator.Check("D", Value(3)))
-    assert(evaluator.Check("D", Value(4)))
-    assert(evaluator.Check("D", Value(5)))
-    assert(evaluator.Check("D", Value(6)))
+    assert(evaluator.Check("D", EvaluatedType(1)))
+    assert(evaluator.Check("D", EvaluatedType(2)))
+    assert(evaluator.Check("D", EvaluatedType(3)))
+    assert(evaluator.Check("D", EvaluatedType(4)))
+    assert(evaluator.Check("D", EvaluatedType(5)))
+    assert(evaluator.Check("D", EvaluatedType(6)))
   }
 }
 ```
 
 
 ### Example of using scopes
+
 ```scala
 import dsl._
 
 object Main {
   def main(args: Array[String]): Unit = {
     val s1 = CreateNewSet("A")
-    val s2 = Assign("x", Value("outermost x"))
-    val s3 = Assign("y", Value("outermost y"))
+    val s2 = Assign("x", EvaluatedType("outermost x"))
+    val s3 = Assign("y", EvaluatedType("outermost y"))
     val s4 = dsl.Scope("scope1", // Creating a new scope named scope1
       // The scope constructor takes a variable number of arguments which are the commands
       // to execute in that scope
-      Assign("x", Value("outer x")),
+      Assign("x", EvaluatedType("outer x")),
       dsl.Scope("scope2",
-        Assign("x", Value("inner x")),
+        Assign("x", EvaluatedType("inner x")),
         Insert("A", Variable("x")),
         Insert("A", Variable("y"))
       )
@@ -503,8 +507,8 @@ object Main {
     val evaluator = new Evaluator()
     evaluator.runProgram(p)
 
-    assert(evaluator.Check("A", Value("inner x")))
-    assert(evaluator.Check("A", Value("outermost y")))
+    assert(evaluator.Check("A", EvaluatedType("inner x")))
+    assert(evaluator.Check("A", EvaluatedType("outermost y")))
   }
 }
 ```
@@ -513,15 +517,16 @@ object Main {
 
 ## Example 1
 We can define a class as follows:
+
 ```scala
-import dsl.{Constructor, DefineClass, Field, Assign, This, Value, Method, Return, AccessModifiers}
+import dsl.{Constructor, DefineClass, Field, Assign, This, EvaluatedType, Method, Return, AccessModifiers}
 
 dsl.DefineClass("Student",
   Field("name"),
   Field("uin", AccessModifiers.PRIVATE),
   Constructor(
-    Assign(This("name"), Value("")),
-    Assign(This("uin"), Value(123456789))
+    Assign(This("name"), EvaluatedType("")),
+    Assign(This("uin"), EvaluatedType(123456789))
   ),
   Method("getUin",
     Return(This("uin"))
@@ -544,8 +549,10 @@ class Student {
 ```
 
 ## Example 2 - `extends` and inheritance
+
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 val finalState = evaluator.run(
@@ -553,8 +560,8 @@ val finalState = evaluator.run(
     Field("x"),
     Field("y"),
     Constructor(
-      Assign(This("x"), Value(0)),
-      Assign(This("y"), Value(0)),
+      Assign(This("x"), EvaluatedType(0)),
+      Assign(This("y"), EvaluatedType(0)),
     ),
     Method("setX",
       Assign(This("x"), Variable("x"))
@@ -564,19 +571,19 @@ val finalState = evaluator.run(
     Extends("Point"), // add an extends clause to extend Point
     Field("z"),
     Constructor(
-      Assign(This("z"), Value(0)),
+      Assign(This("z"), EvaluatedType(0)),
     ),
     Method("setZ",
       Assign(This("z"), Variable("z"))
     )
   ),
-  
+
   // Create a new 3DPoint p1
   Assign(Variable("p1"), NewObject("3DPoint")),
   // p1.setX(50)
-  dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", Value(50))),
+  dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", EvaluatedType(50))),
   // p1.setZ(60)
-  dsl.InvokeMethod(Variable("_"), "p1", "setZ", Parameter("z", Value(60)))
+  dsl.InvokeMethod(Variable("_"), "p1", "setZ", Parameter("z", EvaluatedType(60)))
 )
 ```
 The equivalent Java code:
@@ -612,14 +619,16 @@ public class Main {
 ```
 
 ## Example 3 - Nested Classes
+
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 val finalState = evaluator.run(
   DefineClass("Car",
     Field("name"),
     Constructor(
-      Assign(This("name"), Value("Honda"))
+      Assign(This("name"), EvaluatedType("Honda"))
     ),
     Method("setName",
       Assign(This("name"), Variable("name"))
@@ -631,7 +640,7 @@ val finalState = evaluator.run(
     NestedClass("Engine",
       Field("engine"),
       Constructor(
-        Assign(This("engine"), Value("V8"))
+        Assign(This("engine"), EvaluatedType("V8"))
       ),
       Method("setEngine",
         Assign(This("engine"), Variable("engineName"))
@@ -644,7 +653,7 @@ val finalState = evaluator.run(
   ),
 
   Assign(Variable("car"), NewObject("Car")),
-  dsl.InvokeMethod(Variable("_"), "car", "setName", Parameter("name", Value("Ford"))),
+  dsl.InvokeMethod(Variable("_"), "car", "setName", Parameter("name", EvaluatedType("Ford"))),
   Assign(Variable("engine"), NewObject("Engine", "car")),
   dsl.InvokeMethod(Variable("carName"), "engine", "getCarName")
 )
@@ -735,13 +744,15 @@ class BMX implements Bicycle {
 ```
 
 ## Interfaces example 2
+
 ```scala
-import dsl._ 
+import dsl._
+
 val evaluator = new Evaluator()
 // The interface Car contains a field hp which is set to 700. Interface fields are implicitly final
 val finalState = evaluator.run(
   DefineInterface("Car",
-    InterfaceField("hp", Value(700))
+    InterfaceField("hp", EvaluatedType(700))
   ),
   DefineClass("Honda",
     Implements("Car"),
@@ -752,7 +763,7 @@ val finalState = evaluator.run(
   Assign(Variable("honda"), NewObject("Honda")),
   InvokeMethod(Variable("hp"), "honda", "getHp")
 )
-assert(finalState("hp") == Value(700))
+assert(finalState("hp") == EvaluatedType(700))
 ```
 
 Equivalent Java code:
@@ -774,8 +785,10 @@ public class Main {
 }
 ```
 ## Abstract Class example
+
 ```scala
 import dsl._
+
 val evaluator2 = new Evaluator()
 evaluator2.run(
   DefineClass("Shape",
@@ -786,10 +799,10 @@ evaluator2.run(
     Extends("Shape"),
     Field("side"),
     Constructor(
-      Assign(This("side"), Value(1))
+      Assign(This("side"), EvaluatedType(1))
     ),
     Method("getName",
-      Return(Value("Square"))
+      Return(EvaluatedType("Square"))
     )
   )
 )
@@ -818,10 +831,11 @@ The `If` construct represents a single `if` statement
 
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 evaluator.run(
-  Assign(Variable("condition"), Value(true)),
+  Assign(Variable("condition"), EvaluatedType(true)),
   If(Variable("condition"),
     Print("condition is true")
   )
@@ -847,10 +861,11 @@ and not individual commands one after another.
 
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 evaluator.run(
-  Assign(Variable("condition"), Value(true)),
+  Assign(Variable("condition"), EvaluatedType(true)),
   IfElse(Variable("condition"), List[Command](
     Print("condition is true")
   ),
@@ -884,21 +899,22 @@ is implemented by nesting multiple `IfElse` constructs.
 
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 evaluator.run(
   // setting a = 4
-  Assign(Variable("a"), Value(4)),
-  IfElse(EqualTo(Variable("a"), Value(1)), ifStatements=List[Command](
-    Print("a is 1"), Assert(false)), elseStatements=List[Command](
-    IfElse(EqualTo(Variable("a"), Value(2)), ifStatements=List[Command](
-      Print("a is 2"), Assert(false)), elseStatements=List[Command](
-      IfElse(EqualTo(Variable("a"), Value(3)), ifStatements=List[Command](
-        Print("a is 3"), Assert(false)), elseStatements=List[Command](
-        IfElse(EqualTo(Variable("a"), Value(4)), ifStatements=List[Command](
-          Print("a is 4"), Assert(true)), elseStatements=List[Command](
-          IfElse(EqualTo(Variable("a"), Value(5)), ifStatements=List[Command](
-            Print("a is 5"), Assert(false)), elseStatements=List[Command](
+  Assign(Variable("a"), EvaluatedType(4)),
+  IfElse(EqualTo(Variable("a"), EvaluatedType(1)), ifStatements = List[Command](
+    Print("a is 1"), Assert(false)), elseStatements = List[Command](
+    IfElse(EqualTo(Variable("a"), EvaluatedType(2)), ifStatements = List[Command](
+      Print("a is 2"), Assert(false)), elseStatements = List[Command](
+      IfElse(EqualTo(Variable("a"), EvaluatedType(3)), ifStatements = List[Command](
+        Print("a is 3"), Assert(false)), elseStatements = List[Command](
+        IfElse(EqualTo(Variable("a"), EvaluatedType(4)), ifStatements = List[Command](
+          Print("a is 4"), Assert(true)), elseStatements = List[Command](
+          IfElse(EqualTo(Variable("a"), EvaluatedType(5)), ifStatements = List[Command](
+            Print("a is 5"), Assert(false)), elseStatements = List[Command](
             Print("in the else clause"),
             Assert(false)
           ))
@@ -940,14 +956,15 @@ It works similarly to the ternary operator in Java.
 
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 val finalState = evaluator.run(
-  Assign(Variable("condition"), Value(true)),
-  Assign(Variable("x"), IfElseExpression(Variable("condition"), Value(1), Value(2))),
+  Assign(Variable("condition"), EvaluatedType(true)),
+  Assign(Variable("x"), IfElseExpression(Variable("condition"), EvaluatedType(1), EvaluatedType(2))),
 )
 
-assert(finalState("x") == Value(1))
+assert(finalState("x") == EvaluatedType(1))
 ```
 
 Java code:

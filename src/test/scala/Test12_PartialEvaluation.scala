@@ -70,7 +70,19 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
     )
     assert(fs("s") == IfElseExpression(EqualTo(Value(1), Variable("y")), Value(3), Value(4)))
   }
-  
+
+  it should "test delayed partial eval" in {
+    val evaluator = new Evaluator()
+
+    val fs = evaluator.run(
+      Assign(Variable("y"), Add(Variable("x"), Value(1))),
+      Assign(Variable("x"), Value(3)),
+      Assign(Variable("z"), Add(Variable("x"), Value(1))),
+    )
+    assert(fs("x") == Value(3))
+    assert(fs("y") == Add(Variable("x"), Value(1)))
+    assert(fs("z") == Value(4))
+  }
 }
 
 

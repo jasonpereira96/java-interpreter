@@ -5,7 +5,7 @@ import dsl.AccessModifiers.AccessModifiers
 import scala.collection.mutable
 import scala.collection.immutable
 
-class Field_(val name: String, val value: Value = null, val options: immutable.Map[String, Any] = immutable.Map.empty[String, Any]) {
+class Field_(val name: String, val value: Expression = null, val options: immutable.Map[String, Any] = immutable.Map.empty[String, Any]) {
 
   private val metadata = mutable.Map.empty[String, Any]
 
@@ -21,13 +21,13 @@ class Field_(val name: String, val value: Value = null, val options: immutable.M
     }
   }
 
-  def getValue: Value = value
+  def getValue = value
 
   def getAccessModifier: AccessModifiers = metadata(Constants.ACCESS_MODIFIER).asInstanceOf[AccessModifiers]
 
   def getName: String = name
 
-  def getValueOption: Option[Value] = {
+  def getValueOption: Option[Expression] = {
     if (value == null) {
       return None
     }

@@ -217,6 +217,16 @@ object Util {
     }
   }
 
+  def addValues(v1: Value, v2: Value): Value = {
+    (v1.value, v2.value) match {
+      case (i1: Integer, i2: Integer) => Value(i1 + i2)
+      case (i1: Double, i2: Double) => Value(i1 + i2)
+      case (i1: String, i2: String) => Value(i1 + i2)
+      case (i1: Float, i2: Float) => Value(i1 + i2)
+      case _ => throw new Exception("These types do not support addition")
+    }
+  }
+
   @main
   private def testRunChecks(): Unit = {
     val ct = mutable.Map.empty[String, ClassDefinition]

@@ -18,7 +18,7 @@ class Object(val className: String, val fields: dsl.Field_ *) {
       Constants.FINAL -> isFinal)))
   }
 
-  def setField(name: String, value: Value): Unit = {
+  def setField(name: String, value: Expression): Unit = {
     if (hasField(name)) {
       val accessModifier = this.fieldMap(name).getAccessModifier
       if (this.fieldMap(name).isFinal()) {
@@ -37,7 +37,7 @@ class Object(val className: String, val fields: dsl.Field_ *) {
 
   def isFieldFinal(fieldName: String): Boolean = fieldMap(fieldName).isFinal()
 
-  def getField(name: String): Value = {
+  def getField(name: String): Expression = {
     if (hasField(name)) {
       this.fieldMap(name).getValue
     } else {

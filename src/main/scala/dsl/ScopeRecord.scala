@@ -4,11 +4,11 @@ import dsl.Constants._
 
 import scala.collection.mutable.Map
 
-class ScopeRecord(val name: String = UNNAMED, val state: Map[String, Value] = Map.empty[String, Value], val thisVal: dsl.Object = null) {
+class ScopeRecord(val name: String = UNNAMED, val state: Map[String, Expression] = Map.empty[String, Expression], val thisVal: dsl.Object = null) {
 
   def getName(): String = this.name
 
-  def getState(): Map[String, Value] = this.state
+  def getState(): Map[String, Expression] = this.state
 
   def getThis: dsl.Object = this.thisVal
 
@@ -18,7 +18,7 @@ class ScopeRecord(val name: String = UNNAMED, val state: Map[String, Value] = Ma
 
   def hasThis: Boolean = this.thisVal != null
 
-  def setBinding(key: String, v: Value): Unit = {
+  def setBinding(key: String, v: Expression): Unit = {
     this.state(key) = v
   }
   def deleteBinding(key: String): Unit = {

@@ -218,10 +218,10 @@ class Evaluator {
 
         if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
           val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
           Value(s1.union(s2))
         } else {
-          Union(e1, e2)
+          optimize(Union(e1, e2))
         }
       case Difference(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
@@ -230,10 +230,10 @@ class Evaluator {
 
         if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
           val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
           Value(s1.diff(s2))
         } else {
-          Difference(exp1, exp2)
+          optimize(Difference(e1, e2))
         }
       case Intersection(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
@@ -242,7 +242,7 @@ class Evaluator {
 
         if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
           val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
           Value(s1.intersect(s2))
         } else {
           optimize(Intersection(e1, e2))
@@ -254,7 +254,7 @@ class Evaluator {
 
         if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
           val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
           val union = s1.union(s2)
           val intersection = s1.intersect(s2)
           Value(union.diff(intersection))
@@ -268,7 +268,7 @@ class Evaluator {
 
         if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
           val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
           val result = mutable.Set.empty[Value]
           s1.foreach(v1 => {
             s2.foreach(v2 => {
@@ -339,6 +339,7 @@ class Evaluator {
           }
           assert(this.stack(1).hasBinding(RETURN))
           val retVal = this.stack(1).state(RETURN)
+          this.stack(1).state.remove(RETURN)
           popStackFrame()
           resultSet.add(retVal)
         }
@@ -432,7 +433,7 @@ class Evaluator {
           }
         }
       case DefineMacro(name, expression) =>
-        val newState = this.getState() + (name -> Value(expression))
+        val newState = this.getState() + (name -> expression)
         this.setState(newState)
       case Scope(name, commands@_*) =>
         val commandsList = commands.toList
@@ -923,14 +924,42 @@ class Evaluator {
         }
       case Intersection(e1, e2) =>
         val b1 = e1.isInstanceOf[Value]
-        val b2 = e1.asInstanceOf[Value].value.isInstanceOf[mutable.Set[Value]]
-        val b3 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]].isEmpty
-        if (b1 && b2 && b3 ) {
-          e2
-        } else if (e2.isInstanceOf[Value] && e2.asInstanceOf[Value].value.isInstanceOf[Set[Value]] && e2.asInstanceOf[Value].value.asInstanceOf[Set[Value]].isEmpty) {
+        val b2 = b1 && e1.asInstanceOf[Value].value.isInstanceOf[mutable.Set[Value]]
+        val b3 = b2 && e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]].isEmpty
+        if (b1 && b2 && b3) {
+          return e2
+        }
+        val c1 = e2.isInstanceOf[Value]
+        val c2 = c1 && e2.asInstanceOf[Value].value.isInstanceOf[mutable.Set[Value]]
+        val c3 = c2 && e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]].isEmpty
+        if (c1 && c2 && c3) {
           e1
-        } else {
-          Intersection(e1, e2)
+        }
+        if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
+          val name1 = e1.asInstanceOf[Variable].name
+          val name2 = e1.asInstanceOf[Variable].name
+          if (name1 == name2) {
+            return dsl.Variable(name1)
+          }
+        }
+        Intersection(e1, e2)
+      case Union(e1, e2) =>
+        if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
+          val name1 = e1.asInstanceOf[Variable].name
+          val name2 = e1.asInstanceOf[Variable].name
+          if (name1 == name2) {
+            return dsl.Variable(name1)
+          }
+        }
+        Union(e1, e2)
+      case Difference(e1, e2) =>
+        (e1, e2) match {
+          case (v: Variable, e2: Value) =>
+            e2.value match {
+              case s: mutable.Set[Expression] => if (s.isEmpty) e1  else Difference(e1, e2)
+              case _ => Difference(e1, e2)
+            }
+          case _ => Difference(e1, e2)
         }
       case _ => expression
     }

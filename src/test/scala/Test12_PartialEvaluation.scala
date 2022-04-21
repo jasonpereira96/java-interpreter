@@ -6,6 +6,8 @@ import scala.collection.mutable.ListBuffer
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.collection.mutable
+
 class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
   behavior of "partial evaluation"
 
@@ -17,8 +19,13 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
       Insert("A", Value(1)),
       Assign(Variable("C"), Union(Variable("A"), Variable("B")))
     )
+//    println(fs)
 
-    print(fs)
+    assert(fs("C").isInstanceOf[Union])
+    val u1 = fs("C").asInstanceOf[Union].exp1.asInstanceOf[Value]
+    val u2 = fs("C").asInstanceOf[Union].exp2.asInstanceOf[Variable]
+    assert(u1.value.asInstanceOf[mutable.Set[Expression]].contains(Value(1)))
+    assert(u2.name == "B")
   }
 
   it should "basic addition" in {
@@ -29,7 +36,8 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
       Assign(Variable("y"), Value(2)),
       Assign(Variable("s"), Add(Variable("x"), Variable("y")))
     )
-    print(fs)
+//    print(fs)
+    assert(fs("s") == Value(3))
   }
 
   it should "partially evaluated addition" in {
@@ -44,8 +52,9 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
     )
 
 //    println(List(1,2,3,4).map(item => item * 2))
+    assert(fs("undef") == Add(Value(7), Variable("h")))
 
-    print(fs)
+//    print(fs)
   }
 
   it should "partial eval if-else" in {
@@ -59,97 +68,9 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
         Add(Variable("x"), Value(3))
       ))
     )
-    print(fs)
+    assert(fs("s") == IfElseExpression(EqualTo(Value(1), Variable("y")), Value(3), Value(4)))
   }
-
-  it should "test map" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      CreateNewSet("S"),
-      Insert("S", Value(1)),
-      Insert("S", Value(2)),
-      Insert("S", Value(3)),
-      Insert("S", Value(4)),
-      Assign(Variable("P"), Map(Variable("S"), AnonymousFunction(
-        Return(Add(Variable(Constants.ELEMENT), Value(2)))
-      )
-      ))
-    )
-    print(fs)
-  }
-  it should "test optimizing add" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      Assign(Variable("x"), Add(Variable("y"), Value(0)))
-    )
-    print(fs)
-  }
-
-  it should "test optimizing if else expression" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      Assign(Variable("result"), IfElseExpression(Value(false), Variable("x"), Variable("y")))
-    )
-    print(fs)
-  }
-
-  it should "test optimizing intersect" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      CreateNewSet("B"),
-      Assign(Variable("result"), Intersection(Variable("B"), Variable("A")))
-    )
-    print(fs)
-  }
-  it should "test optimizing intersect 2" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      CreateNewSet("B"),
-      Assign(Variable("result"), Intersection(Variable("A"), Variable("B")))
-    )
-    print(fs)
-  }
-
-  it should "test optimizing intersect 3" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      Assign(Variable("result"), Intersection(Variable("A"), Variable("A")))
-    )
-    print(fs)
-  }
-
-  it should "test optimizing union" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      Assign(Variable("result"), Union(Variable("A"), Variable("A")))
-    )
-    print(fs)
-  }
-  it should "test optimizing union 2" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      Assign(Variable("result"), Union(Union(Variable("A"), Variable("A")), Variable("A")))
-    )
-    print(fs)
-  }
-
-  it should "test optimizing difference" in {
-    val evaluator = new Evaluator()
-
-    val fs = evaluator.run(
-      CreateNewSet("B"),
-      Assign(Variable("result"), Difference(Variable("A"), Variable("B")))
-    )
-    print(fs)
-  }
+  
 }
 
 

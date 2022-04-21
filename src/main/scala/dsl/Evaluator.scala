@@ -927,13 +927,13 @@ class Evaluator {
         val b2 = b1 && e1.asInstanceOf[Value].value.isInstanceOf[mutable.Set[Value]]
         val b3 = b2 && e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]].isEmpty
         if (b1 && b2 && b3) {
-          return e2
+          return Value(mutable.Set.empty[Expression])
         }
         val c1 = e2.isInstanceOf[Value]
         val c2 = c1 && e2.asInstanceOf[Value].value.isInstanceOf[mutable.Set[Value]]
         val c3 = c2 && e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]].isEmpty
         if (c1 && c2 && c3) {
-          e1
+          return Value(mutable.Set.empty[Expression])
         }
         if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
           val name1 = e1.asInstanceOf[Variable].name

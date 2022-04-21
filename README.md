@@ -10,8 +10,8 @@
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
 - [Branching Constructs](#branching-constructs)
 - [Exception Handling](#exception-handling)
-- [`Map()`](#exception-handling)
-- [Partial Evaluation](#exception-handling)
+- [`Map()`](#map)
+- [Partial Evaluation](#partial-evaluation)
 - [Truthy and Falsey values](#truthy-and-falsey-values)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
@@ -1175,6 +1175,65 @@ class Main {
 ```
 
 # Partial Evaluation
+
+My language now supports partial evaluation, which implies that it
+will continue to evaluate expression in the face of undefined variables.
+If an expression `E` has an undefined variable, then `E` will
+reduce to a simplified expression `E'`, instead of reducing to 
+a value.
+
+As a simple example, the expression
+```
+2 + 3 + x
+```
+will reduce to
+```
+5 + x
+```
+since it cannot be evaluated completely.
+
+Similarly, in the case of sets,
+```
+A U A
+```
+will reduce to
+```
+A
+```
+Since `A` is undefined, it cannot be reduced to a concrete value yet.
+This is also an example of an optimizing transformation function.
+
+## Optimizing transformation functions
+
+I have implemented the following Optimizing transformation functions
+
+Assuming that the variables `x` and `y` are undefined:
+
+```
+x + 0 -> x
+true ? x : y -> x
+false ? x : y -> y
+```
+
+For sets:
+```
+if B is empty then,
+A intersection B -> empty set
+
+if A is empty then,
+A intersection B -> empty set
+
+if A is undefined then,
+A intersection A -> A
+
+if A is undefined then,
+A U A -> A
+
+if A and B are undefined then,
+A - B -> A
+```
+
+Refer to the test cases for extensive examples.
 
 # Truthy and Falsey Values
 

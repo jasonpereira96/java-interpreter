@@ -3,7 +3,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable.ListBuffer
-import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import scala.collection.mutable
@@ -79,6 +78,29 @@ class Test14_Map extends AnyFlatSpec with Matchers {
     assert(resultSet.contains(Add(Value(5), Variable("X"))))
     assert(resultSet.contains(Add(Value(6), Variable("X"))))
     assert(resultSet.size == 6)
+  }
+
+  it should "test map with the identity function" in {
+    val evaluator = new Evaluator()
+
+    val fs = evaluator.run(
+      CreateNewSet("S"),
+      Insert("S", Value(1)),
+      Insert("S", Value(2)),
+      Insert("S", Value(3)),
+      Insert("S", Value(4)),
+      Assign(Variable("P"), Map(Variable("S"), AnonymousFunction(
+        Return(Variable(Constants.ELEMENT))
+      )
+      ))
+    )
+    val resultSet = fs("P").asInstanceOf[Value].value.asInstanceOf[mutable.Set[Expression]]
+    assert(resultSet.contains(Value(1)))
+    assert(resultSet.contains(Value(2)))
+    assert(resultSet.contains(Value(3)))
+    assert(resultSet.contains(Value(4)))
+    assert(!resultSet.contains(Value(5)))
+    assert(resultSet.size == 4)
   }
 }
 

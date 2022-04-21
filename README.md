@@ -10,6 +10,8 @@
 - [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
 - [Branching Constructs](#branching-constructs)
 - [Exception Handling](#exception-handling)
+- [`Map()`](#exception-handling)
+- [Partial Evaluation](#exception-handling)
 - [Truthy and Falsey values](#truthy-and-falsey-values)
 - [Installing and Running](#installing-and-running)
 - [Implementation Details](#implementation-details)
@@ -1103,6 +1105,76 @@ class Main {
 }
 ```
 Refer to the test cases for more examples.
+
+# `Map()`
+The function `map()` has been implemented in my language very similarly
+to its implementation in other languages like Java, Scala and JS
+
+`Map()` takes a set `S` and an anonymous function `F` as arguments and
+returns as new set whose elements are the all the elements generated
+by applying `F` to every element of the set `S`. `F` is called the
+callback function.
+
+**Note:  Inside the callback function, each element of set `S` is boud
+to the identifier specified by `Constants.ELEMENT` every time
+the function is called.**
+
+**Note: The last statement of the callback function `F` must be
+a `Return` statement. Not following this rule will result 
+in undefined behaviour.**
+
+The function is called on each element of `S` one by one and 
+the result are added to a newly created result set which is
+returned.
+
+
+Example:
+
+```scala
+import dsl._
+import scala.collection.mutable
+
+val evaluator = new Evaluator()
+
+val fs = evaluator.run(
+  CreateNewSet("S"),
+  Insert("S", Value(1)),
+  Insert("S", Value(2)),
+  Insert("S", Value(3)),
+  Insert("S", Value(4)),
+  Assign(Variable("P"), Map(Variable("S"), AnonymousFunction(
+    Return(Add(Variable(Constants.ELEMENT), Value(10)))
+  )
+  ))
+)
+val resultSet = fs("P").asInstanceOf[Value].value.asInstanceOf[mutable.Set[Expression]]
+assert(resultSet.contains(Value(11)))
+assert(resultSet.contains(Value(12)))
+assert(resultSet.contains(Value(13)))
+assert(resultSet.contains(Value(14)))
+assert(resultSet.size == 4)
+```
+
+Equivalent Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        Set<Integer> S = new HashSet<>();
+        S.add(1);
+        S.add(2);
+        S.add(3);
+        S.add(4);
+        Set<Integer> P = S.stream().map(ELEMENT -> ELEMENT + 10).collect(Collectors.toSet());
+        assert(P.contains(10));
+        assert(P.contains(11));
+        assert(P.contains(12));
+        assert(P.contains(13));
+        assert(P.size() == 4);
+    }
+}
+```
+
+# Partial Evaluation
 
 # Truthy and Falsey Values
 

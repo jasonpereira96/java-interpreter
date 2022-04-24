@@ -83,6 +83,16 @@ class Test12_PartialEvaluation extends AnyFlatSpec with Matchers {
     assert(fs("y") == Add(Variable("x"), Value(1)))
     assert(fs("z") == Value(4))
   }
+
+  it should "test partial eval 2" in {
+    val evaluator = new Evaluator()
+
+    val fs = evaluator.run(
+      Assign(Variable("x"), Value(1)),
+      Assign(Variable("s"), Add(Add(Variable("x"), Variable("y")), Value(1))),
+    )
+    assert(fs("s") == Add(Add(Value(1),Variable("y")),Value(1)))
+  }
 }
 
 

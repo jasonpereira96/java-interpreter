@@ -190,9 +190,8 @@ class Evaluator {
               evaluate(exp)
           }
         } catch {
-          case _: Throwable => {
+          case _: Throwable =>
             Variable(name)
-          }
         }
       case ScopeResolvedVariable(scopeName: String, varName) =>
         try {
@@ -216,72 +215,77 @@ class Evaluator {
         val e1 = evaluate(exp1)
         val e2 = evaluate(exp2)
 
-        if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
-          val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          Value(s1.union(s2))
-        } else {
-          optimize(Union(e1, e2))
+        e1 match {
+          case value: Value if e2.isInstanceOf[Value] =>
+            val s1 = value.value.asInstanceOf[mutable.Set[Value]]
+            val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+            Value(s1.union(s2))
+          case _ =>
+            optimize(Union(e1, e2))
         }
       case Difference(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
         val e1: Expression = expressions.head
         val e2: Expression = expressions(1)
 
-        if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
-          val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          Value(s1.diff(s2))
-        } else {
-          optimize(Difference(e1, e2))
+        e1 match {
+          case value: Value if e2.isInstanceOf[Value] =>
+            val s1 = value.value.asInstanceOf[mutable.Set[Value]]
+            val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+            Value(s1.diff(s2))
+          case _ =>
+            optimize(Difference(e1, e2))
         }
       case Intersection(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
         val e1: Expression = expressions.head
         val e2: Expression = expressions(1)
 
-        if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
-          val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          Value(s1.intersect(s2))
-        } else {
-          optimize(Intersection(e1, e2))
+        e1 match {
+          case value: Value if e2.isInstanceOf[Value] =>
+            val s1 = value.value.asInstanceOf[mutable.Set[Value]]
+            val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+            Value(s1.intersect(s2))
+          case _ =>
+            optimize(Intersection(e1, e2))
         }
       case SymmetricDifference(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
         val e1: Expression = expressions.head
         val e2: Expression = expressions(1)
 
-        if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
-          val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val union = s1.union(s2)
-          val intersection = s1.intersect(s2)
-          Value(union.diff(intersection))
-        } else {
-          SymmetricDifference(exp1, exp2)
+        e1 match {
+          case value: Value if e2.isInstanceOf[Value] =>
+            val s1 = value.value.asInstanceOf[mutable.Set[Value]]
+            val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+            val union = s1.union(s2)
+            val intersection = s1.intersect(s2)
+            Value(union.diff(intersection))
+          case _ =>
+            SymmetricDifference(exp1, exp2)
         }
       case CartesianProduct(exp1, exp2) =>
         val expressions: List[Expression] = evaluateExpressions(List(exp1, exp2))
         val e1: Expression = expressions.head
         val e2: Expression = expressions(1)
 
-        if (e1.isInstanceOf[Value] && e2.isInstanceOf[Value]) {
-          val s1 = e1.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
-          val result = mutable.Set.empty[Value]
-          s1.foreach(v1 => {
-            s2.foreach(v2 => {
-              val tuple_ = (v1.value, v2.value)
-              result.add(Value(tuple_))
+        e1 match {
+          case value: Value if e2.isInstanceOf[Value] =>
+            val s1 = value.value.asInstanceOf[mutable.Set[Value]]
+            val s2 = e2.asInstanceOf[Value].value.asInstanceOf[mutable.Set[Value]]
+            val result = mutable.Set.empty[Value]
+            s1.foreach(v1 => {
+              s2.foreach(v2 => {
+                val tuple_ = (v1.value, v2.value)
+                result.add(Value(tuple_))
+              })
             })
-          })
-          Value(result)
-        } else {
-          CartesianProduct(exp1, exp2)
+            Value(result)
+          case _ =>
+            CartesianProduct(exp1, exp2)
         }
       case CheckIfContains(exp1, exp2) =>
-        return Value(false)
+        Value(false)
       //        val expressions: List[Value] = evaluateExpressions(List(exp1, exp2))
       //        val set1: mutable.Set[Value] = expressions.head.value.asInstanceOf[mutable.Set[Value]]
       //        val v: Value = expressions(1)
@@ -311,16 +315,14 @@ class Evaluator {
 
       case IfElseExpression(exp, exprIfTrue, exprIfFalse) =>
         evaluate(exp) match {
-          case v: Value => {
+          case v: Value =>
             if (Util.isTruthy(v)) {
               evaluate(exprIfTrue)
             } else {
               evaluate(exprIfFalse)
             }
-          }
-          case e: Expression => {
+          case e: Expression =>
             IfElseExpression(evaluate(exp), evaluate(exprIfTrue), evaluate(exprIfFalse))
-          }
         }
       case dsl.Map(expression: Expression, anonymousFunction: AnonymousFunction) =>
         val s1 = evaluate(expression)
@@ -403,14 +405,13 @@ class Evaluator {
         val expressions = expressionsSeq.toList
         val lookedUpItem = this.lookup(name)
         lookedUpItem match {
-          case x: Value => {
+          case x: Value =>
             val set: mutable.Set[Expression] = x.value.asInstanceOf[mutable.Set[Expression]]
             for (exp: Expression <- expressions) {
               set.add(evaluate(exp))
             }
             val newState = this.getState() + (name -> Value(set))
             this.setState(newState)
-          }
           case ex: Expression => {
             println("xxxxxx")
           }
@@ -420,17 +421,15 @@ class Evaluator {
         val expressions = expressionsSeq.toList
         val lookedUpItem = this.lookup(name)
         lookedUpItem match {
-          case x: Value => {
+          case x: Value =>
             val set: mutable.Set[Expression] = x.value.asInstanceOf[mutable.Set[Expression]]
             for (exp: Expression <- expressions) {
               set.remove(evaluate(exp))
             }
             val newState = this.getState() + (name -> Value(set))
             this.setState(newState)
-          }
-          case ex: Expression => {
+          case ex: Expression =>
             println("xxxxxx")
-          }
         }
       case DefineMacro(name, expression) =>
         val newState = this.getState() + (name -> expression)
@@ -545,21 +544,18 @@ class Evaluator {
       case ExceptionClassDef(className: String) =>
         this.exceptionClassTable(className) = className
 
-      case Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock) => {
+      case Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock) =>
         try {
           runCommands(commands)
         } catch {
-          case e: InternalException => {
+          case e: InternalException =>
             if (!runCatchBlocks(e, catchBlocks)) { // no matching catch block is found
               this.execute(Throw(e.className, e.reason)) // re-throw the exception
             }
-
-          }
         } finally {
           // always execute the finally block
           this.execute(finallyBlock)
         }
-      }
 
       case Throw(className: String, reason) =>
         if (this.exceptionClassTable.contains(className)) {
@@ -590,7 +586,7 @@ class Evaluator {
     false
   }
 
-  private def runCommands(commands: List[Command]) = {
+  private def runCommands(commands: List[Command]): Unit = {
     for (c: Command <- commands) {
       this.execute(c)
     }
@@ -935,21 +931,25 @@ class Evaluator {
         if (c1 && c2 && c3) {
           return Value(mutable.Set.empty[Expression])
         }
-        if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
-          val name1 = e1.asInstanceOf[Variable].name
-          val name2 = e2.asInstanceOf[Variable].name
-          if (name1 == name2) {
-            return dsl.Variable(name1)
-          }
+        e1 match {
+          case variable: Variable if e2.isInstanceOf[Variable] =>
+            val name1 = variable.name
+            val name2 = e2.asInstanceOf[Variable].name
+            if (name1 == name2) {
+              return dsl.Variable(name1)
+            }
+          case _ =>
         }
         Intersection(e1, e2)
       case Union(e1, e2) =>
-        if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
-          val name1 = e1.asInstanceOf[Variable].name
-          val name2 = e2.asInstanceOf[Variable].name
-          if (name1 == name2) {
-            return dsl.Variable(name1)
-          }
+        e1 match {
+          case variable: Variable if e2.isInstanceOf[Variable] =>
+            val name1 = variable.name
+            val name2 = e2.asInstanceOf[Variable].name
+            if (name1 == name2) {
+              return dsl.Variable(name1)
+            }
+          case _ =>
         }
         Union(e1, e2)
       case Difference(e1, e2) =>

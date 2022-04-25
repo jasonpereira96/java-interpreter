@@ -14,7 +14,7 @@ object Util {
     }
   }
 
-  private def hasCycle(graph: Map[String, ListBuffer[String]]): Boolean = {
+  private def hasCycle(graph: scala.collection.immutable.Map[String, ListBuffer[String]]): Boolean = {
     val N = graph.keySet.size
     val prereq = ListBuffer.empty[Array[Int]]
     val idMapping = mutable.Map.empty[String, Integer]

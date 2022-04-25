@@ -21,7 +21,7 @@ class Field_(val name: String, val value: Expression = null, val options: immuta
     }
   }
 
-  def getValue = value
+  def getValue: Expression = value
 
   def getAccessModifier: AccessModifiers = metadata(Constants.ACCESS_MODIFIER).asInstanceOf[AccessModifiers]
 

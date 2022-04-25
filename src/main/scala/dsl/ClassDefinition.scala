@@ -30,41 +30,32 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
 
   for (option <- options) {
     option match {
-      case Constructor(commands @ _*) => {
+      case Constructor(commands @ _*) =>
         this.constructor.addAll(commands.toList)
-      }
-      case Method(name: String, commands @ _*) => {
+      case Method(name: String, commands @ _*) =>
         this.methods.addOne(name, new MethodDefinition(name, commands.toList))
-      }
-      case Field(name: String, accessModifier: AccessModifiers) => {
+      case Field(name: String, accessModifier: AccessModifiers) =>
         this.fields.addOne(name, new Field_(name, null, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier)))
-      }
-      case TypedField(typeName: String, name: String, accessModifier: AccessModifiers) => {
+      case TypedField(typeName: String, name: String, accessModifier: AccessModifiers) =>
         val f = new Field_(name, null, immutable.Map(Constants.ACCESS_MODIFIER -> accessModifier))
         this.fields.addOne(name, f)
         f.setType(typeName)
-      }
 
-      case isAbstract(isAbstract) => {
+      case isAbstract(isAbstract) =>
         metadata(Constants.isAbstract) = isAbstract
-      }
 
       // handling this outside for now
       // case Extends(name: String) => {
         //this.parentClass.addOne(name)
       //}
-      case Extends(name) => {
+      case Extends(name) =>
         // just here to placate a match error since we're handling extends outside
-      }
-      case Implements(name) => {
+      case Implements(name) =>
         this.implementedInterfaces.addOne(name)
-      }
-      case NestedClass(name, options @ _*) => {
+      case NestedClass(name, options @ _*) =>
         // just here to placate a match error since we're handling nested class outside
-      }
-      case AbstractMethod(name) => {
+      case AbstractMethod(name) =>
         this.methods.addOne(name, new MethodDefinition(name, List.empty[Command],true))
-      }
     }
   }
 
@@ -92,19 +83,19 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
     if (this.parentClass.isEmpty) {
       return null
     }
-    return this.parentClass.toList.head
+    this.parentClass.toList.head
   }
 
   def getFieldAccessModifier(fieldName: String): AccessModifiers = {
     if (this.fields.contains(fieldName)) { // checking only on this class, not parent classes
-      return this.fields(fieldName).getAccessModifier
+      this.fields(fieldName).getAccessModifier
     } else {
       throw new Exception()
     }
   }
 
   def getFieldInfo(): List[Field_] = {
-    return this.fields.toList.map[Field_](x => x._2)
+    this.fields.toList.map[Field_](x => x._2)
   }
 
   def setOuterClass(outerClassName: String): Unit = {
@@ -118,7 +109,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
     if (this.outerClass.isEmpty) {
       return null
     }
-    return this.outerClass.toList.head
+    this.outerClass.toList.head
   }
 
   def isAbstract(): Boolean = {
@@ -129,7 +120,7 @@ class ClassDefinition(val name: String, val options: ClassDefinitionOption*) {
 
   def getMethods(): mutable.Map[String, MethodDefinition] =  this.methods
 
-  def implementsInterface(name: String) = this.implementedInterfaces.contains(name)
+  def implementsInterface(name: String): Boolean = this.implementedInterfaces.contains(name)
 
   def getImplementedInterfaces: mutable.Set[String] = this.implementedInterfaces
 }

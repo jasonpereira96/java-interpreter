@@ -8,5 +8,5 @@ object Constants {
   val FINAL = "FINAL"
   val ANY = "ANY"
   val ELEMENT = "ELEMENT"
-  val DEFAULT_FINALLY_BLOCK = FinallyBlock()
+  val DEFAULT_FINALLY_BLOCK: FinallyBlock = FinallyBlock()
 }

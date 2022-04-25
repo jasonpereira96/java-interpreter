@@ -937,7 +937,7 @@ class Evaluator {
         }
         if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
           val name1 = e1.asInstanceOf[Variable].name
-          val name2 = e1.asInstanceOf[Variable].name
+          val name2 = e2.asInstanceOf[Variable].name
           if (name1 == name2) {
             return dsl.Variable(name1)
           }
@@ -946,7 +946,7 @@ class Evaluator {
       case Union(e1, e2) =>
         if (e1.isInstanceOf[Variable] && e2.isInstanceOf[Variable]) {
           val name1 = e1.asInstanceOf[Variable].name
-          val name2 = e1.asInstanceOf[Variable].name
+          val name2 = e2.asInstanceOf[Variable].name
           if (name1 == name2) {
             return dsl.Variable(name1)
           }

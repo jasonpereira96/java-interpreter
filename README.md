@@ -253,6 +253,31 @@ int b = 2 - 1;
 a == b // return true
 ```
 
+### `Add(exp1: Expression, exp2: Expression)`
+
+Returns the addition of 2 values. Addition is supported for
+integers and strings only. Addition of strings will return their
+concatenation.
+
+### `AnonymousFunction(commands: Command*)`
+
+Defines an anonymous function for use in `Map()`.
+
+### `Map(expression: Expression, anonymousFunction: AnonymousFunction)`
+It is a higher order function that takes a set and an `AnonymousFunction(commands: Command*)` as arguments.
+It returns as new set that is created by applying `anonymousFunction`
+to every element of the set passed in as argument.
+The last statement of the anonymousFunction must be a `Return`
+statement.
+
+`anonymousFunction` is called with the current element being processed
+in the set as an argument. This current element is bound to the identifier
+specified by `Constants.ELEMENT`.  
+Refer to [`Map()`](#map).
+
+
+
+
 # Helper Classes
 
 ##  `ClassDefinitionOption`
@@ -1200,14 +1225,40 @@ will reduce to
 ```
 A
 ```
-Since `A` is undefined, it cannot be reduced to a concrete value yet.
+Since `A` is not known yet, it cannot be reduced to a concrete value yet.
 This is also an example of an optimizing transformation function.
+
+```scala
+import dsl._
+import scala.collection.mutable
+
+val evaluator = new Evaluator()
+
+val fs = evaluator.run(
+  CreateNewSet("A"),
+  Insert("A", Value(1)),
+  Assign(Variable("C"), Union(Variable("A"), Variable("B")))
+)
+
+assert(fs("C").isInstanceOf[Union])
+val u1 = fs("C").asInstanceOf[Union].exp1.asInstanceOf[Value]
+val u2 = fs("C").asInstanceOf[Union].exp2.asInstanceOf[Variable]
+assert(u1.value.asInstanceOf[mutable.Set[Expression]].contains(Value(1)))
+assert(u2.name == "B")
+```
+Explaination:
+```
+A = {}          // created a new set A
+A.insert(1)     // inserted 1 into A
+C = A union B   // Assigning the value of A U B to the new variable C
+// Since B is not defined, the value of C will be the expression A U B
+```
 
 ## Optimizing transformation functions
 
 I have implemented the following Optimizing transformation functions
 
-Assuming that the variables `x` and `y` are undefined:
+Assuming that the variables `x` and `y` are not known yet:
 
 ```
 x + 0 -> x
@@ -1223,13 +1274,13 @@ A intersection B -> empty set
 if A is empty then,
 A intersection B -> empty set
 
-if A is undefined then,
+if A is not known yet then,
 A intersection A -> A
 
-if A is undefined then,
+if A is not known yet then,
 A U A -> A
 
-if A and B are undefined then,
+if A and B are not known yet then,
 A - B -> A
 ```
 

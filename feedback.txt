@@ -1,21 +1,24 @@
 Grading
 --------------------------------------
-Maximum grade for this homework is 10%. 
 
-1. Only some basic expression language is implemented without scopes and assignments and macros and nothing else is done.
-Marks deducted: 0% 
+Maximum grade for this homework is 10%.
+
+1. only some basic expression language is implemented
+Marks deducted: 0%
 
 2. For each use of var instead of val:
-Number of `var` used: 0 
+Number of `var` used: 0
 Marks deducted: 0%
-Comments: var used, but used in a private scope, that doesnt have any side-effects. So no marks deducted.
+
 
 3. for each non-spelling-related problem reported by the IntelliJ code analysis and inspection tool 0.2% will be substracted from the maximum grade
 Number of errors: 0
 Marks deducted: 0%
 
 4. having less than five unit and/or integration tests that show how your implemented features work: up to 5% lost;
-Minimum 5 Test cases: Yes 
+
+Minimum 5 Test cases: Yes
+
 Marks deducted: 0%
 
 5. missing comments and explanations from the program: up to 5% lost;
@@ -33,8 +36,5 @@ Comments: N/A
 Marks deducted: 0%
 Comments: N/A
 
-Marks for Homework 1: 10%
 
-Comments: 
-Good implementation and Very detailed documentation. Provides enough information for the user to get good understanding about the Language, and get started quickly.
-I really liked the implementation of 'this' functionality in your project.
+Marks for Homework 5: 10%

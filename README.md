@@ -1,16 +1,23 @@
-# Homework 2 Report - Jason Pereira (676827009)
+# Homework 5 Report - Jason Pereira (676827009)
 
 ## Index
-- [Commands](https://github.com/jasonpereira96/CS-474-Assignment-1#commands)
-- [Expressions](https://github.com/jasonpereira96/CS-474-Assignment-1#expressions)
-- [Helper Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#helper-classes)
-- [AccessModifiers](https://github.com/jasonpereira96/CS-474-Assignment-2#accessmodifiers)
-- [Examples on using the language](https://github.com/jasonpereira96/CS-474-Assignment-1#examples-on-using-my-language)
-- [Using Classes](https://github.com/jasonpereira96/CS-474-Assignment-2#using-classes)
-- [Installing and Running](https://github.com/jasonpereira96/CS-474-Assignment-1#installing-and-running)
-- [Implementation Details](https://github.com/jasonpereira96/CS-474-Assignment-1#implementation-details)
-- [Limitations of the implementation](https://github.com/jasonpereira96/CS-474-Assignment-1#limitations-of-the-implementation)
-- [`Evaluator`](https://github.com/jasonpereira96/CS-474-Assignment-1#evaluator)
+- [Commands](#commands)
+- [Expressions](#expressions)
+- [Helper Classes](#helper-classes)
+- [AccessModifiers](#accessmodifiers)
+- [Examples on using the language](#examples-on-using-my-language)
+- [Using Classes](#using-classes)
+- [Using Abstract Classes and Interfaces](#using-abstract-classes-and-interfaces)
+- [Branching Constructs](#branching-constructs)
+- [Exception Handling](#exception-handling)
+- [`Map()`](#map)
+- [Partial Evaluation](#partial-evaluation)
+- [Truthy and Falsey values](#truthy-and-falsey-values)
+- [Installing and Running](#installing-and-running)
+- [Implementation Details](#implementation-details)
+- [Assignment Questions](#assignment-questions)
+- [Limitations of the implementation](#limitations-of-the-implementation)
+- [`Evaluator`](#evaluator)
 
 ## Constructs defined
 I define the following constructs for my language. They are divided
@@ -19,15 +26,7 @@ into commands and expressions.
 ### Commands
 A command represents an operating that you can perform in my language.
 The following is the list of commands defined.
-```
-dsl.Assign(ident: String, exp: dsl.Expression)
-dsl.Insert(setName: String, exps: dsl.Expression*)
-dsl.Delete(setName: String, exps: dsl.Expression*)
-dsl.CreateNewSet(name: String)
-dsl.Scope(name: String, commands: dsl.Command*)
-dsl.DefineMacro(name: String, expression: dsl.Expression)
-dsl.Display(message: String, identifier: String)
-```
+
 
 ### `dsl.Assign(ident: String, exp: dsl.Expression)`
 Evaluates expression `exp` and assigns it to a new variable named
@@ -62,11 +61,100 @@ further computation.
 Prints out a custom message followed by the contents of the variable
 specified by `identifier`.
 
-### `dsl.DefineClass(className: String, options: ClassDefinitionOption *`
+### `dsl.DefineClass(className: String, options: ClassDefinitionOption *)`
 Defines a class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
 Refer to the Using Classes section.
 
-### `dsl.NestedClass(className: String, options: ClassDefinitionOption *`
+### `dsl.DefineInterface(intrefaceName: String, options: InterfaceDefinitionOption *)`
+Defines an interface named `intrefaceName`. Specify the properties of the class using options. Refer `InterfaceDefinitionOption` below and examples.
+Refer to the Using Classes section.
+
+### `dsl.If(expression: Expression, commands: Command*)`
+Construct for branching based on a condition. All the `commands` are executed only if
+the `expression` evaluates to a Truthy value. (Follows Javascript's model for
+truthy and falsey values. Refer to the section about truthy and falsey values)
+
+Equivalent to Java's:
+```java
+if (condition) {
+    // commands    
+}
+```
+
+### `dsl.IfElse(expression: Expression, ifStatements: List[Command], elseStatements: List[Command])`
+Construct for branching based on a condition. All the `ifStatements` are executed only if
+the `expression` evaluates to a Truthy value. Otherwise, all the `elseStatements` are executed. (Follows Javascript's model for
+truthy and falsey values. Refer to the section about truthy and falsey values)
+
+Equivalent to Java's:
+```java
+if (condition) {
+    // ifStatements    
+} else {
+    // elseStatements
+}
+```
+
+
+### `ExceptionClassDef(className: String)`
+Define an exception class that can throw later.
+
+Equivalent to Java's:
+```java
+class MyCustomException extends Exception {
+    
+}
+```
+
+
+### `Try(commands: List[Command], catchBlocks: List[CatchBlock], finallyBlock: FinallyBlock = Constants.DEFAULT_FINALLY_BLOCK)`
+A try, catch, finally block for handling exceptions. If an exception is caught, the catch blocks will try to match the exception class name
+in the order specified.
+Refer to the examples for details.
+
+Equivalent Java construct:
+```java
+try {
+    // commands
+} catch (ExceptionType1 e) {
+    // statements    
+} catch (ExceptionType2 e) {
+    // statements    
+} catch (ExceptionType3 e) {
+    // statements    
+} finally {
+    // statements
+}
+```
+### `CatchBlock(className: String, commands: Command*)`
+Defines a `catch` block to be used within a `try/catch/finally` construct.
+If `Constants.ANY` is specified for the `className` parameter, 
+It will work as a catch block without a type of exception to catch.
+Should be used last in the list.
+```java
+catch {
+    // statements    
+}
+```
+Equivalent Java construct:
+```java
+catch (Exception e) {
+    
+} 
+```
+
+### `FinallyBlock(commands: Command*)`
+Similar to the `catch` block, it is a `finally` block.
+
+### `Throw(className: String, reason: String = "")`
+Equivalent to the `throw` statement in Java. Used to throw an exception.
+
+Equivalent Java construct:
+```java
+throw new Exception("something went wrong")
+```
+
+### `dsl.NestedClass(className: String, options: ClassDefinitionOption *)`
 Defines a nested class named `className`. Specify the properties of the class using options. Refer `ClassDefinitionOption` below and class examples.
 Refer to the Using Classes section.
 
@@ -153,6 +241,43 @@ Similar to:
 OuterClass.this.x
 ```
 
+
+### `EqualTo(exp1: Expression, exp2: Expression)`
+Implements the `==` operator in most languages. It first evaluates `exp1` and
+`exp2` and then returns `true` if they are equal or `false` otherwise.
+
+Similar to Java's
+```java
+int a = 1;
+int b = 2 - 1;
+a == b // return true
+```
+
+### `Add(exp1: Expression, exp2: Expression)`
+
+Returns the addition of 2 values. Addition is supported for
+integers and strings only. Addition of strings will return their
+concatenation.
+
+### `AnonymousFunction(commands: Command*)`
+
+Defines an anonymous function for use in `Map()`.
+
+### `Map(expression: Expression, anonymousFunction: AnonymousFunction)`
+It is a higher order function that takes a set and an `AnonymousFunction(commands: Command*)` as arguments.
+It returns as new set that is created by applying `anonymousFunction`
+to every element of the set passed in as argument.
+The last statement of the anonymousFunction must be a `Return`
+statement.
+
+`anonymousFunction` is called with the current element being processed
+in the set as an argument. This current element is bound to the identifier
+specified by `Constants.ELEMENT`.  
+Refer to [`Map()`](#map).
+
+
+
+
 # Helper Classes
 
 ##  `ClassDefinitionOption`
@@ -170,6 +295,9 @@ The default access modifier is `PUBLIC`
 ### `Method(name: String, commands: Command*)`
 Adds a method to the class. Takes as params the commands that make up the body of the method.
 
+### `AbstractMethod(name: String)`
+Adds an abstract method to the class. 
+
 ### `Extends(name: String)` 
 Adds an extends clause to the class. `name` is the name of the class to extend.
 Equivalent to Java's construct 
@@ -178,6 +306,28 @@ class Student extends Person {
     // ...
 }
 ```
+
+### `Implements(name: String)`
+Adds an `implements` clause to the class. `name` is the name of the interface to implement. 
+You can have multiple implements clauses.
+Equivalent to Java's construct
+```java
+class Car implements Vehicle {
+    // ...
+}
+```
+
+### `isAbstract(isAbstract: Boolean)`
+if the parameter is specified as `true`, then the class is declared as
+`abstract`. An abstract class cannot be instansiated and must contain
+at least one abstract method.
+Equivalent to Java's construct
+```java
+abstract class Car {
+    // ...
+}
+```
+
 
 ### `NestedClass(className: String, options: ClassDefinitionOption *)`
 Adds an nested class inside the class. `className` is the name of the nested class.
@@ -188,6 +338,26 @@ class A {
     class B {
         int y;
     }
+}
+```
+
+##  `InterfaceDefinitionOption`
+These are the options that you can pass to a interface definition to add properties to the interface.
+Refer the classes example for usage.
+
+
+### `InterfaceField(fieldName: String, value: dsl.Value)`
+Adds a field to the interface. Takes as params the field name. Interface fields are implicitly public and final.
+
+### `InterfaceMethod(name: String)`
+Adds a method to the interface. Interface methods are abstract so they do not need a body. 
+
+### `Extends(name: String)`
+Adds an extends clause to the interface. `name` is the name of the interface to extend.
+Equivalent to Java's construct
+```java
+interface Student extends Person {
+    // ...
 }
 ```
 
@@ -221,6 +391,7 @@ A `dsl.Program` is defined as a list of commands.
 
 ```scala
 // import the dsl package
+
 import dsl._
 
 object Main {
@@ -231,18 +402,18 @@ object Main {
 
     // Call evaluator.run and pass the commands to run as args
     evaluator.run(
-      Assign("i", Value(4)), // i = 4
+      Assign("i", EvaluatedType(4)), // i = 4
       CreateNewSet("A"), // Creating a new set A
-      Insert("A", Value(4), Value(5)), // A.insert(4, 5)
+      Insert("A", EvaluatedType(4), EvaluatedType(5)), // A.insert(4, 5)
       CreateNewSet("X"), // Creating a new set X
       CreateNewSet("Y"), // Creating a new set Y
-      Insert("X", Value(10), Value(20), Value(30)), // X.insert(10, 20, 30)
-      Insert("Y", Value(30), Value(40)), // Y.insert(30, 40)
+      Insert("X", EvaluatedType(10), EvaluatedType(20), EvaluatedType(30)), // X.insert(10, 20, 30)
+      Insert("Y", EvaluatedType(30), EvaluatedType(40)), // Y.insert(30, 40)
       Assign("X U Y", Union(Variable("X"), Variable("Y"))), // X U Y = the union of X and Y
       Assign("X - Y", Difference(Variable("X"), Variable("Y"))), // X - y = the difference between X and Y
       Assign("X intersect Y", Intersection(Variable("X"), Variable("Y"))), // X intersect Y = the intersection of X and Y
       Assign("X x Y", CartesianProduct(Variable("X"), Variable("Y"))), // X x Y = the cartesian product of X and Y
-      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), Value(300))), // Check whether Y contains 300
+      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), EvaluatedType(300))), // Check whether Y contains 300
       Display("i is", "i"), // Display the value of i
       Display("Contents of X", "X"), // Display the contents of X
       Display("Contents of Y", "Y"),
@@ -253,7 +424,7 @@ object Main {
     )
 
     // After evaluator.run() has finished, you can use Check() and CheckVariable() to verify the results
-    if (evaluator.Check("Y", Value(30))) {
+    if (evaluator.Check("Y", EvaluatedType(30))) {
       println("Y contains 300")
     }
   }
@@ -266,6 +437,7 @@ and pass it to the `runProgram()` method instead.
 
 ```scala
 // import the dsl package
+
 import dsl._
 
 object Main {
@@ -276,18 +448,18 @@ object Main {
 
     // Create a Program with a list of commands
     val program = new Program(List(
-      Assign("i", Value(4)), // i = 4
+      Assign("i", EvaluatedType(4)), // i = 4
       CreateNewSet("A"), // Creating a new set A
-      Insert("A", Value(4), Value(5)), // A.insert(4, 5)
+      Insert("A", EvaluatedType(4), EvaluatedType(5)), // A.insert(4, 5)
       CreateNewSet("X"), // Creating a new set X
       CreateNewSet("Y"), // Creating a new set Y
-      Insert("X", Value(10), Value(20), Value(30)), // X.insert(10, 20, 30)
-      Insert("Y", Value(30), Value(40)), // Y.insert(30, 40)
+      Insert("X", EvaluatedType(10), EvaluatedType(20), EvaluatedType(30)), // X.insert(10, 20, 30)
+      Insert("Y", EvaluatedType(30), EvaluatedType(40)), // Y.insert(30, 40)
       Assign("X U Y", Union(Variable("X"), Variable("Y"))), // X U Y = the union of X and Y
       Assign("X - Y", Difference(Variable("X"), Variable("Y"))), // X - y = the difference between X and Y
       Assign("X intersect Y", Intersection(Variable("X"), Variable("Y"))), // X intersect Y = the intersection of X and Y
       Assign("X x Y", CartesianProduct(Variable("X"), Variable("Y"))), // X x Y = the cartesian product of X and Y
-      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), Value(300))), // Check whether Y contains 300
+      Assign("is 300 in Y?", CheckIfContains(Variable("Y"), EvaluatedType(300))), // Check whether Y contains 300
       Display("i is", "i"), // Display the value of i
       Display("Contents of X", "X"), // Display the contents of X
       Display("Contents of Y", "Y"),
@@ -296,12 +468,12 @@ object Main {
       Display("Contents of X intersect Y", "X intersect Y"),
       Display("Contents of X x Y", "X x Y")
     ))
-    
+
     // Run the program
     evaluator.runProgram(program)
 
     // After evaluator.run() has finished, you can use Check() and CheckVariable() to verify the results
-    if (evaluator.Check("Y", Value(30))) {
+    if (evaluator.Check("Y", EvaluatedType(30))) {
       println("Y contains 300")
     }
   }
@@ -309,49 +481,51 @@ object Main {
 ```
 
 ### Example with a Macro
+
 ```scala
 import dsl._
 
 object Main {
   def main(args: Array[String]): Unit = {
     val s1 = CreateNewSet("A")
-    val s2 = Insert("A", Value(1), Value(2), Value(3))
+    val s2 = Insert("A", EvaluatedType(1), EvaluatedType(2), EvaluatedType(3))
     val s3 = CreateNewSet("B")
-    val s4 = Insert("A", Value(4), Value(5))
+    val s4 = Insert("A", EvaluatedType(4), EvaluatedType(5))
     val s5 = DefineMacro("m", Union(Variable("A"), Variable("B"))) // Defining a new Macro named m
     val s6 = CreateNewSet("C")
-    val s7 = Insert("C", Value(6))
+    val s7 = Insert("C", EvaluatedType(6))
     val s8 = Assign("D", Union(Variable("m"), Variable("C"))) // Using the macro
     val p = new Program(List(s1, s2, s3, s4, s5, s6, s7, s8))
     val evaluator = new Evaluator()
     evaluator.runProgram(p)
 
-    assert(evaluator.Check("D", Value(1)))
-    assert(evaluator.Check("D", Value(2)))
-    assert(evaluator.Check("D", Value(3)))
-    assert(evaluator.Check("D", Value(4)))
-    assert(evaluator.Check("D", Value(5)))
-    assert(evaluator.Check("D", Value(6)))
+    assert(evaluator.Check("D", EvaluatedType(1)))
+    assert(evaluator.Check("D", EvaluatedType(2)))
+    assert(evaluator.Check("D", EvaluatedType(3)))
+    assert(evaluator.Check("D", EvaluatedType(4)))
+    assert(evaluator.Check("D", EvaluatedType(5)))
+    assert(evaluator.Check("D", EvaluatedType(6)))
   }
 }
 ```
 
 
 ### Example of using scopes
+
 ```scala
 import dsl._
 
 object Main {
   def main(args: Array[String]): Unit = {
     val s1 = CreateNewSet("A")
-    val s2 = Assign("x", Value("outermost x"))
-    val s3 = Assign("y", Value("outermost y"))
+    val s2 = Assign("x", EvaluatedType("outermost x"))
+    val s3 = Assign("y", EvaluatedType("outermost y"))
     val s4 = dsl.Scope("scope1", // Creating a new scope named scope1
       // The scope constructor takes a variable number of arguments which are the commands
       // to execute in that scope
-      Assign("x", Value("outer x")),
+      Assign("x", EvaluatedType("outer x")),
       dsl.Scope("scope2",
-        Assign("x", Value("inner x")),
+        Assign("x", EvaluatedType("inner x")),
         Insert("A", Variable("x")),
         Insert("A", Variable("y"))
       )
@@ -360,8 +534,8 @@ object Main {
     val evaluator = new Evaluator()
     evaluator.runProgram(p)
 
-    assert(evaluator.Check("A", Value("inner x")))
-    assert(evaluator.Check("A", Value("outermost y")))
+    assert(evaluator.Check("A", EvaluatedType("inner x")))
+    assert(evaluator.Check("A", EvaluatedType("outermost y")))
   }
 }
 ```
@@ -370,15 +544,16 @@ object Main {
 
 ## Example 1
 We can define a class as follows:
+
 ```scala
-import dsl.{Constructor, DefineClass, Field, Assign, This, Value, Method, Return, AccessModifiers}
+import dsl.{Constructor, DefineClass, Field, Assign, This, EvaluatedType, Method, Return, AccessModifiers}
 
 dsl.DefineClass("Student",
   Field("name"),
   Field("uin", AccessModifiers.PRIVATE),
   Constructor(
-    Assign(This("name"), Value("")),
-    Assign(This("uin"), Value(123456789))
+    Assign(This("name"), EvaluatedType("")),
+    Assign(This("uin"), EvaluatedType(123456789))
   ),
   Method("getUin",
     Return(This("uin"))
@@ -401,8 +576,10 @@ class Student {
 ```
 
 ## Example 2 - `extends` and inheritance
+
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 
 val finalState = evaluator.run(
@@ -410,8 +587,8 @@ val finalState = evaluator.run(
     Field("x"),
     Field("y"),
     Constructor(
-      Assign(This("x"), Value(0)),
-      Assign(This("y"), Value(0)),
+      Assign(This("x"), EvaluatedType(0)),
+      Assign(This("y"), EvaluatedType(0)),
     ),
     Method("setX",
       Assign(This("x"), Variable("x"))
@@ -421,19 +598,19 @@ val finalState = evaluator.run(
     Extends("Point"), // add an extends clause to extend Point
     Field("z"),
     Constructor(
-      Assign(This("z"), Value(0)),
+      Assign(This("z"), EvaluatedType(0)),
     ),
     Method("setZ",
       Assign(This("z"), Variable("z"))
     )
   ),
-  
+
   // Create a new 3DPoint p1
   Assign(Variable("p1"), NewObject("3DPoint")),
   // p1.setX(50)
-  dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", Value(50))),
+  dsl.InvokeMethod(Variable("_"), "p1", "setX", Parameter("x", EvaluatedType(50))),
   // p1.setZ(60)
-  dsl.InvokeMethod(Variable("_"), "p1", "setZ", Parameter("z", Value(60)))
+  dsl.InvokeMethod(Variable("_"), "p1", "setZ", Parameter("z", EvaluatedType(60)))
 )
 ```
 The equivalent Java code:
@@ -469,14 +646,16 @@ public class Main {
 ```
 
 ## Example 3 - Nested Classes
+
 ```scala
 import dsl._
+
 val evaluator = new Evaluator()
 val finalState = evaluator.run(
   DefineClass("Car",
     Field("name"),
     Constructor(
-      Assign(This("name"), Value("Honda"))
+      Assign(This("name"), EvaluatedType("Honda"))
     ),
     Method("setName",
       Assign(This("name"), Variable("name"))
@@ -488,7 +667,7 @@ val finalState = evaluator.run(
     NestedClass("Engine",
       Field("engine"),
       Constructor(
-        Assign(This("engine"), Value("V8"))
+        Assign(This("engine"), EvaluatedType("V8"))
       ),
       Method("setEngine",
         Assign(This("engine"), Variable("engineName"))
@@ -501,7 +680,7 @@ val finalState = evaluator.run(
   ),
 
   Assign(Variable("car"), NewObject("Car")),
-  dsl.InvokeMethod(Variable("_"), "car", "setName", Parameter("name", Value("Ford"))),
+  dsl.InvokeMethod(Variable("_"), "car", "setName", Parameter("name", EvaluatedType("Ford"))),
   Assign(Variable("engine"), NewObject("Engine", "car")),
   dsl.InvokeMethod(Variable("carName"), "engine", "getCarName")
 )
@@ -546,7 +725,585 @@ public class MyClass {
 }
 ```
 
-**Refer to the [test cases](https://github.com/jasonpereira96/CS-474-Assignment-2/tree/master/src/test/scala) for more extensive examples.**
+# Using Abstract Classes and Interfaces
+
+## Interfaces example
+```scala
+import dsl._
+val evaluator = new Evaluator()
+evaluator.run(
+  DefineInterface("Bicycle",
+    InterfaceMethod("applyBrakes"),
+    InterfaceMethod("speedUp")
+  ),
+  DefineClass("BMX",
+    Implements("Bicycle"),
+    Method("applyBrakes",
+      Print("applying brakes")
+    ),
+    Method("speedUp",
+      Print("speeding up")
+    )
+  )
+)
+```
+
+Equivalent Java code:
+
+```java
+interface Bicycle {
+    void applyBrakes();
+
+    void speedUp();
+}
+
+class BMX implements Bicycle {
+    @Override
+    public void applyBrakes() {
+        System.out.println("applying brakes");
+    }
+
+    @Override
+    public void speedUp() {
+        System.out.println("speeding up");
+    }
+}
+```
+
+## Interfaces example 2
+
+```scala
+import dsl._
+
+val evaluator = new Evaluator()
+// The interface Car contains a field hp which is set to 700. Interface fields are implicitly final
+val finalState = evaluator.run(
+  DefineInterface("Car",
+    InterfaceField("hp", EvaluatedType(700))
+  ),
+  DefineClass("Honda",
+    Implements("Car"),
+    Method("getHp",
+      Return(This("hp"))
+    )
+  ),
+  Assign(Variable("honda"), NewObject("Honda")),
+  InvokeMethod(Variable("hp"), "honda", "getHp")
+)
+assert(finalState("hp") == EvaluatedType(700))
+```
+
+Equivalent Java code:
+```java
+interface Car {
+    int hp = 700;
+}
+class Honda implements Car {
+    int getHp() {
+        return this.hp;
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+        Honda honda = new Honda();
+        int hp = honda.getHp();
+        assert(hp == 700); 
+    }
+}
+```
+## Abstract Class example
+
+```scala
+import dsl._
+
+val evaluator2 = new Evaluator()
+evaluator2.run(
+  DefineClass("Shape",
+    isAbstract(true),
+    AbstractMethod("getName")
+  ),
+  DefineClass("Square",
+    Extends("Shape"),
+    Field("side"),
+    Constructor(
+      Assign(This("side"), EvaluatedType(1))
+    ),
+    Method("getName",
+      Return(EvaluatedType("Square"))
+    )
+  )
+)
+```
+
+Java code:
+```java
+abstract class Shape {
+    abstract String getName();
+}
+class Square extends Shape {
+    int side;
+    Square() {
+        this.side = 1;
+    }
+    String getName() {
+        return "Square";
+    }
+}
+```
+
+# Branching Constructs
+
+## `if` statement
+The `If` construct represents a single `if` statement
+
+```scala
+import dsl._
+
+val evaluator = new Evaluator()
+
+evaluator.run(
+  Assign(Variable("condition"), EvaluatedType(true)),
+  If(Variable("condition"),
+    Print("condition is true")
+  )
+)
+```
+
+Equivalent Java code:
+```java
+class Main {
+     public static void main(String [] args) {
+         boolean condition = true;
+         if (condition) {
+             System.out.println("condition is true");
+         }
+     }
+}
+```
+
+## `if else` statement
+
+Note that the `if else` construct takes a `List[Command]` 
+and not individual commands one after another.
+
+```scala
+import dsl._
+
+val evaluator = new Evaluator()
+
+evaluator.run(
+  Assign(Variable("condition"), EvaluatedType(true)),
+  IfElse(Variable("condition"), List[Command](
+    Print("condition is true")
+  ),
+    List[Command](
+      Print("condition is false"),
+      Assert(false) // code should never reach here
+    )
+  )
+)
+```
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        boolean condition = true;
+        if (condition) {
+            System.out.println("condition is true");
+        } else {
+            System.out.println("condition is false");
+            assert(false); 
+        }
+    }
+}
+```
+
+## `if else` ladder
+You can use the `if` and `if else` constructs to build an
+`if else` ladder.  
+Note: There is not seperate if else elseif construct. `else if`
+is implemented by nesting multiple `IfElse` constructs.
+
+```scala
+import dsl._
+
+val evaluator = new Evaluator()
+
+evaluator.run(
+  // setting a = 4
+  Assign(Variable("a"), EvaluatedType(4)),
+  IfElse(EqualTo(Variable("a"), EvaluatedType(1)), ifStatements = List[Command](
+    Print("a is 1"), Assert(false)), elseStatements = List[Command](
+    IfElse(EqualTo(Variable("a"), EvaluatedType(2)), ifStatements = List[Command](
+      Print("a is 2"), Assert(false)), elseStatements = List[Command](
+      IfElse(EqualTo(Variable("a"), EvaluatedType(3)), ifStatements = List[Command](
+        Print("a is 3"), Assert(false)), elseStatements = List[Command](
+        IfElse(EqualTo(Variable("a"), EvaluatedType(4)), ifStatements = List[Command](
+          Print("a is 4"), Assert(true)), elseStatements = List[Command](
+          IfElse(EqualTo(Variable("a"), EvaluatedType(5)), ifStatements = List[Command](
+            Print("a is 5"), Assert(false)), elseStatements = List[Command](
+            Print("in the else clause"),
+            Assert(false)
+          ))
+        ))
+      ))
+    ))
+  ))
+)
+```
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        int a = 4;
+        if (a == 1) {
+            System.out.println("a is 1");
+            assert(false); 
+        } else if (a == 2) {
+            System.out.println("a is 2");
+            assert(false);
+        } else if (a == 3) {
+            System.out.println("a is 3");
+            assert(false);
+        } else if (a == 4) {
+            System.out.println("a is 4");
+            assert(true);
+        } else {
+            System.out.println("a is 5");
+            System.out.println("in the else clause");
+            assert(false);
+        }
+    }
+}
+```
+## The ternary operator `condition ? exprIfTrue : exprIfFalse`
+
+The ternary operator in my language is called `IfElseExpression`.
+It works similarly to the ternary operator in Java.
+
+```scala
+import dsl._
+
+val evaluator = new Evaluator()
+
+val finalState = evaluator.run(
+  Assign(Variable("condition"), EvaluatedType(true)),
+  Assign(Variable("x"), IfElseExpression(Variable("condition"), EvaluatedType(1), EvaluatedType(2))),
+)
+
+assert(finalState("x") == EvaluatedType(1))
+```
+
+Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        boolean condition = true;
+        int x = condition ? 1 : 2;
+        assert(x == 1); 
+    }
+}
+```
+The ternary operator can also be nested. See test cases for
+more examples.
+
+# Exception Handling
+
+Just like Java, my language supports exception handling.
+
+To define a custom exception class, use the `ExceptionClassDef(className: String)` construct.
+
+You can then `throw` an exception of that type by using the
+`Throw` construct.
+
+If your code throws an exception it should be surrounded by
+a `Try` construct which includes a list of `Catch` blocks and 
+an optional `Finally` block.
+
+
+Consider this code:
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  ExceptionClassDef("E"), // define a new Exception class E
+  
+  // enclose any code that can throw an exception in a try block
+  Try(
+    List[Command](
+      Throw("E", reason="throwing E"), // throw the exception
+      Assert(false)
+    ),
+    List[CatchBlock]( // here is a list of catch blocks that can catch the exception
+      CatchBlock(Constants.ANY,
+        Print("Exception caught")
+      )
+    )
+  )
+)
+```
+
+Equivalent Java code:
+
+```java
+class E extends Exception {
+}
+
+class Main {
+    public static void main(String[] args) {
+        try {
+            throw new E("Throwing an exception");
+            assert(false); 
+        } catch (Exception e) {
+            System.out.println("Exception caught");
+        }
+    }
+}
+
+```
+
+**Another example:**
+
+
+Nested `try/catch`:
+```scala
+import dsl._
+val evaluator = new Evaluator()
+
+evaluator.run(
+  ExceptionClassDef("E1"),
+  ExceptionClassDef("E2"),
+  ExceptionClassDef("E3"),
+  Try(
+    List[Command](
+      Try(
+        List[Command](
+          Throw("E3")
+        ),
+        List[CatchBlock](
+          CatchBlock("E1", Print("Exception of type E1 caught"), Assert(false)),
+          CatchBlock("E2", Print("Exception of type E2 caught"), Assert(false)),
+        ),
+        FinallyBlock(
+          Print("finally 1 executed")
+        )
+      )
+    ),
+    List[CatchBlock](
+      CatchBlock("E3", Print("Exception of type E3 caught"), Assert(true)),
+    ),
+    FinallyBlock(
+      Print("finally 2 executed")
+    )
+  )
+)
+```
+
+Java code:
+```java
+class E1 extends Exception {}
+class E2 extends Exception {}
+class E3 extends Exception {}
+
+class Main {
+    public static void main(String[] args) {
+        try {
+            try {
+                throw new E3();
+            } catch (E1 e) {
+                System.out.println("Exception of type E1 caught");
+                assert(false);
+            } catch (E2 e) {
+                System.out.println("Exception of type E2 caught");
+                assert(false);
+            } finally {
+                System.out.println("finally 1 executed");
+            }
+        } catch (E3 e) {
+            System.out.println("Exception of type E3 caught");
+            assert(true); 
+        } finally {
+            System.out.println("finally 2 executed");
+        }
+    }
+}
+```
+Refer to the test cases for more examples.
+
+# `Map()`
+The function `map()` has been implemented in my language very similarly
+to its implementation in other languages like Java, Scala and JS
+
+`Map()` takes a set `S` and an anonymous function `F` as arguments and
+returns as new set whose elements are the all the elements generated
+by applying `F` to every element of the set `S`. `F` is called the
+callback function.
+
+**Note:  Inside the callback function, each element of set `S` is boud
+to the identifier specified by `Constants.ELEMENT` every time
+the function is called.**
+
+**Note: The last statement of the callback function `F` must be
+a `Return` statement. Not following this rule will result 
+in undefined behaviour.**
+
+The function is called on each element of `S` one by one and 
+the result are added to a newly created result set which is
+returned.
+
+
+Example:
+
+```scala
+import dsl._
+import scala.collection.mutable
+
+val evaluator = new Evaluator()
+
+val fs = evaluator.run(
+  CreateNewSet("S"),
+  Insert("S", Value(1)),
+  Insert("S", Value(2)),
+  Insert("S", Value(3)),
+  Insert("S", Value(4)),
+  Assign(Variable("P"), Map(Variable("S"), AnonymousFunction(
+    Return(Add(Variable(Constants.ELEMENT), Value(10)))
+  )
+  ))
+)
+val resultSet = fs("P").asInstanceOf[Value].value.asInstanceOf[mutable.Set[Expression]]
+assert(resultSet.contains(Value(11)))
+assert(resultSet.contains(Value(12)))
+assert(resultSet.contains(Value(13)))
+assert(resultSet.contains(Value(14)))
+assert(resultSet.size == 4)
+```
+
+Equivalent Java code:
+```java
+class Main {
+    public static void main(String[] args) {
+        Set<Integer> S = new HashSet<>();
+        S.add(1);
+        S.add(2);
+        S.add(3);
+        S.add(4);
+        Set<Integer> P = S.stream().map(ELEMENT -> ELEMENT + 10).collect(Collectors.toSet());
+        assert(P.contains(10));
+        assert(P.contains(11));
+        assert(P.contains(12));
+        assert(P.contains(13));
+        assert(P.size() == 4);
+    }
+}
+```
+
+# Partial Evaluation
+
+My language now supports partial evaluation, which implies that it
+will continue to evaluate expression in the face of undefined variables.
+If an expression `E` has an undefined variable, then `E` will
+reduce to a simplified expression `E'`, instead of reducing to 
+a value.
+
+As a simple example, the expression
+```
+2 + 3 + x
+```
+will reduce to
+```
+5 + x
+```
+since it cannot be evaluated completely.
+
+Similarly, in the case of sets,
+```
+A U A
+```
+will reduce to
+```
+A
+```
+Since `A` is not known yet, it cannot be reduced to a concrete value yet.
+This is also an example of an optimizing transformation function.
+
+```scala
+import dsl._
+import scala.collection.mutable
+
+val evaluator = new Evaluator()
+
+val fs = evaluator.run(
+  CreateNewSet("A"),
+  Insert("A", Value(1)),
+  Assign(Variable("C"), Union(Variable("A"), Variable("B")))
+)
+
+assert(fs("C").isInstanceOf[Union])
+val u1 = fs("C").asInstanceOf[Union].exp1.asInstanceOf[Value]
+val u2 = fs("C").asInstanceOf[Union].exp2.asInstanceOf[Variable]
+assert(u1.value.asInstanceOf[mutable.Set[Expression]].contains(Value(1)))
+assert(u2.name == "B")
+```
+Explaination:
+```
+A = {}          // created a new set A
+A.insert(1)     // inserted 1 into A
+C = A union B   // Assigning the value of A U B to the new variable C
+// Since B is not defined, the value of C will be the expression A U B
+```
+
+## Optimizing transformation functions
+
+I have implemented the following Optimizing transformation functions
+
+Assuming that the variables `x` and `y` are not known yet:
+
+```
+x + 0 -> x
+true ? x : y -> x
+false ? x : y -> y
+```
+
+For sets:
+```
+if B is empty then,
+A intersection B -> empty set
+
+if A is empty then,
+A intersection B -> empty set
+
+if A is not known yet then,
+A intersection A -> A
+
+if A is not known yet then,
+A U A -> A
+
+if A and B are not known yet then,
+A - B -> A
+```
+
+Refer to the test cases for extensive examples.
+
+# Truthy and Falsey Values
+
+Since there is no type-checker for my language, conditional expressions
+inside the `if` can evaluate to any type of value. This includes, boolean values,
+strings, numbers, etc...  
+Therefore, some values are considered truthy for the purposes for conditional
+expression evaluation and some are considered false. Many intepreteded languages
+like Javascript and Python also follow this model because they 
+do not have type checkers as well.
+
+In my language the values `0`, `false` and `""` are considered to be `false`
+when encountered in boolean context. All other values are considered to be `true`.
+
+
+Reference: https://developer.mozilla.org/en-US/docs/Glossary/Truthy
+
+
+**Refer to the [test cases](src/test/scala) for more extensive examples.**
 
 # Installing and running
 ## Steps:
@@ -753,6 +1510,105 @@ in the current scope record and use it accordingly. If `this` is not present, it
 
 Nested classes have been implemented by storing a reference to the outer class object of 
 an inner object for every `dsl.Object`. This field is `null` this object is not an object of an inner class.
+
+## Abstract Classes
+Declaring a class as `abstract` implies that it cannot be instansiated and that it must contain 
+atleast one abstract method. You can later implement the abstract methods in derived classes using the
+`AbstractMethod` construct. Internally, there is a boolean flag `isAbstract` that stores whether the class is abstract or not.
+The code then does the necessary checks so that the requirements for abstract classes are met.
+
+
+## Interfaces
+Interfaces are represented internally as objects of type `InterfaceDefinition`. In the `Evaluator` class,
+there is a `Map` of interface name to interface definitions. 
+
+## Resolving Cyclic dependencies
+In order to check for cycles within inheritance chains, I build a graph of all the classes in the program.
+Each class is represented as a node in the graph. If class A extends class B, then I add a directed edge between A and B.
+By employed the DFS cycle detection algorithm, I detect if there is any cyclic dependency between the inheritance chains.
+A similar approach is followed for interface extends chains.
+
+Consider the class hierarchy shown below. class B extends A. class R extends
+Q and class Q extends P. We build a graph with one node for each class
+and look for cycles. Since no cycles are found, this class hierarchy
+is okay.
+
+![Cyclic dependency resolution](src/img/c1.png)
+
+Consider the class hierarchy shown below. 
+- class A extends B
+- class B extends C
+- class C extends D
+- class D extends A
+
+Since there is a cycle in this graph, we have found a cyclic dependency
+in the inheritance chain.
+
+![Cyclic dependency resolution](src/img/c2.png)
+
+A similar approach is followed for interfaces as well.
+
+## Exception Handling
+I have implemented a new class table only to store new exeception
+classes. They could have been stored in the original class table,
+but this was a design decision on my part. Internally, the try and catch
+constructs are implemented using Scala's try catch construct.
+If an exception is throw I do not proceed further but unwind the
+stack till I find a matching catch block, 
+else I rethrow the exception.
+
+If there is no matching catch block until the topmost scope
+is reached, then an error message is printed on the console.
+
+## Branching
+I have implemented short-circuit evaluation for my if-else statements.
+This means that as soon as final result of the conditional expression is
+determined, I do not evaluate the rest of the clauses in the `if`
+
+Also, only one of the blocks in the `if-else` ladder is executed,
+depending on which condition clause is evaluated to `true`.
+
+To implement an `if/elseif/else` ladder, I have used nested `if-else`
+statements  as done in many languages and compilers.
+
+Reference:
+https://docs.python.org/3/library/ast.html#control-flow
+
+The ternary operator is implemented similarly.
+
+
+
+# Assignment Questions
+**Can a class/interface inherit from itself?**  
+No. The cycle detection algorithm will detect a cycle in the inheritance chain and
+print out an error message.
+
+**Can an interface inherit from an abstract class with all pure methods?**  
+No. An interface can only inherit from an interface. Interfaces and classes are 2 separate constructs. Classes
+can inherit from (concrete or abstract) classes and interfaces can inherit from interfaces.
+
+**Can an interface implement another interface?**  
+No. Only a class can implement an interface. One interface implementing another interface does not
+make sense because all methods in an interface are abstract anyway.
+
+
+**Can a class implement two or more different interfaces that declare methods with exactly the same signatures?**  
+Yes. Since the interfaces are unrelated, one method in the class will count for 2 separate implementation requirements.
+
+**Can an abstract class inherit from another abstract class and implement interfaces where all interfaces and the abstract class have methods with the same signatures?**  
+Yes. If an abstract class is implementing an interface, the method body for the implemented methods is not required.
+
+**Can an abstract class implement interfaces?**  
+Yes. If an abstract class is implementing an interface, the method body for the implemented methods is not required.
+
+**Can a class implement two or more interfaces that have methods whose signatures differ only in return types?**  
+Yes. Different return types means they are different methods.
+
+**Can an abstract class inherit from a concrete class?**  
+Yes. There is no restriction that prevents an abstract class from extending a concrete class.
+
+**Can an abstract class/interface be instantiated as anonymous concrete classes?**  
+Anonymous classes are not supported in my language.
 
 # Limitations of the Implementation
 - **A command cannot be used in a macro.**

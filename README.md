@@ -1,4 +1,9 @@
-# Homework 5 Report - Jason Pereira (676827009)
+# Java Interpreter
+
+An interpreter for a Java-like language built in Scala. It supports features like classes, interfaces and inheritance.
+Input to the interpreter must be given in the form of an AST.
+Uses duck-typing, since it is an interpreted language.
+
 
 ## Index
 - [Commands](#commands)
